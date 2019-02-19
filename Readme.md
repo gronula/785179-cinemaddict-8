@@ -1,7 +1,7 @@
 # Личный проект «Киноман» [![Build status][travis-image]][travis-url]
 
 * Студент: [Алексей Носиков](https://up.htmlacademy.ru/ecmascript/8/user/785179).
-* Наставник: `Неизвестно`.
+* Наставник: [Вадим Шевяков](https://up.htmlacademy.ru/ecmascript/8/user/574589).
 
 ---
 
