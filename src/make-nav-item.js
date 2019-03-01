@@ -1,11 +1,11 @@
-export default (name, isActive, isAdditional, textContent, hasCounter, amount) => `
-<a href="#${name}"
+export default (properties) => `
+<a href="#${properties.name}"
   class="
     main-navigation__item
-    ${isActive ? `main-navigation__item--active` : ``}
-    ${isAdditional ? `main-navigation__item--additional` : ``}
+    ${properties.isActive ? `main-navigation__item--active` : ``}
+    ${properties.isAdditional ? `main-navigation__item--additional` : ``}
   "
 >
-  ${textContent}
-  ${hasCounter ? ` <span class="main-navigation__item-count">${amount}</span>` : ``}
+  ${properties.text}
+  ${properties.hasCounter ? ` <span class="main-navigation__item-count">${properties.amount}</span>` : ``}
 </a>`;
