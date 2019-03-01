@@ -5,22 +5,28 @@ const NAV_ITEMS_NUMBER = 5;
 const CARDS_NUMBER = 7;
 const CARDS_EXTRA_NUMBER = 2;
 
-const NavProperty = {
-  NAMES: [
-    `all`,
-    `watchlist`,
-    `history`,
-    `favorites`,
-    `stats`,
-  ],
-  TEXTS: [
-    `All movies`,
-    `Watchlist`,
-    `History`,
-    `Favorites`,
-    `Stats`,
-  ]
-};
+const NAV_PROPERTIES = [
+  {
+    name: `all`,
+    text: `All movies`
+  },
+  {
+    name: `watchlist`,
+    text: `Watchlist`
+  },
+  {
+    name: `history`,
+    text: `History`
+  },
+  {
+    name: `favorites`,
+    text: `Favorites`
+  },
+  {
+    name: `stats`,
+    text: `Stats`
+  }
+];
 
 const CardProperty = {
   TITLES: [
@@ -61,10 +67,10 @@ const renderNavItems = (navItemsNumber) => {
 
   for (let i = 0; i < navItemsNumber; i++) {
     const properties = {};
-    properties.name = NavProperty.NAMES[i];
+    properties.name = NAV_PROPERTIES[i].name;
     properties.isActive = i === randomActiveItemNumber ? 1 : 0;
     properties.isAdditional = i === navItemsNumber - 1 ? 1 : 0;
-    properties.text = NavProperty.TEXTS[i];
+    properties.text = NAV_PROPERTIES[i].text;
     properties.hasCounter = i === 0 || properties.isAdditional ? 0 : 1;
     properties.amount = getRandomInteger(0, 10);
 
