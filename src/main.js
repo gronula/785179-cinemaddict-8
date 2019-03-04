@@ -1,5 +1,6 @@
 import getNavItemMarkup from './make-nav-item';
 import getCardMarkup from './make-card';
+import getCardData from './card-data';
 
 const NAV_ITEMS_NUMBER = 5;
 const CARDS_NUMBER = 7;
@@ -28,32 +29,6 @@ const NAV_PROPERTIES = [
   }
 ];
 
-const CardProperty = {
-  TITLES: [
-    `The Assassination Of Jessie James By The Coward Robert Ford`,
-    `Incredibles 2`
-  ],
-  GENRES: [
-    `Action`,
-    `Adventure`,
-    `Comedy`,
-    `Drama`,
-    `Horror`
-  ],
-  POSTER_FILES: [
-    `three-friends.jpg`,
-    `moonrise.jpg`,
-    `fuga-da-new-york.jpg`,
-    `blue-blazes.jpg`,
-    `accused.jpg`,
-    `blackmail.jpg`
-  ],
-  DESCRIPTIONS: [
-    `A priest with a haunted past and a novice on the threshold of her final vows are sent by the Vatican to investigate the death of a young nun in Romania and confront a malevolent force in the form of a demonic nun.`,
-    `A priests Romania and confront a malevolent force in the form of a demonic nun.`
-  ]
-};
-
 const mainNav = document.querySelector(`.main-navigation`);
 const filmsList = document.querySelector(`.films-list  .films-list__container`);
 const filmsListsExtra = document.querySelectorAll(`.films-list--extra  .films-list__container`);
@@ -80,20 +55,14 @@ const renderNavItems = (navItemsNumber) => {
 
 const renderCards = (cardsNumber, container, hasControls = true) => {
   container.innerHTML = ``;
+  const cards = [];
 
   for (let i = 0; i < cardsNumber; i++) {
-    const properties = {};
-    properties.hasControls = hasControls;
-    properties.title = getRandomElement(CardProperty.TITLES);
-    properties.rating = getRandomFloat(0, 10).toFixed(1);
-    properties.year = getRandomInteger(1900, 2018);
-    properties.duration = `${getRandomInteger(1, 3)}h&nbsp;${getRandomInteger(0, 59)}m`;
-    properties.genre = getRandomElement(CardProperty.GENRES);
-    properties.posterFile = getRandomElement(CardProperty.POSTER_FILES);
-    properties.commentsAmount = getRandomInteger(0, 500);
-    properties.description = getRandomElement(CardProperty.DESCRIPTIONS);
+    const data = getCardData();
+    data.hasControls = hasControls;
+    cards.push(data);
 
-    container.innerHTML += getCardMarkup(properties);
+    container.innerHTML += getCardMarkup(data);
   }
 };
 
