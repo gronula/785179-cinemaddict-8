@@ -178,7 +178,7 @@ a:hover {
   flex-basis: 230px;
   flex-shrink: 0;
   flex-grow: 0;
-  margin-right: 15px;
+  margin-right: 10px;
   padding-top: calc(340px + 50px + 10px);
   position: relative;
 }
@@ -232,7 +232,7 @@ a:hover {
 }
 
 .film-card__description {
-  font-size: --font-size-smaller;
+  font-size: var(--font-size-smaller);
   padding-right: 30px;
 }
 
