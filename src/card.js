@@ -16,6 +16,7 @@ export default class Card {
 
     this._element = null;
     this._onClick = null;
+    this._commentsClickHandler = this._commentsClickHandler.bind(this);
   }
 
   _getTemplate(hasControls) {
@@ -54,20 +55,16 @@ export default class Card {
     this._onClick = fn;
   }
 
-  bind(element, event, fn) {
-    element.addEventListener(event, fn.bind(this));
-  }
-
-  unbind(element, event, fn) {
-    element.removeEventListener(event, fn.bind(this));
+  bind() {
+    const comments = this._element.querySelector(`.film-card__comments`);
+    comments.addEventListener(`click`, this._commentsClickHandler);
   }
 
   render(hasControls) {
     const markup = this._getTemplate(hasControls);
     this._element = createElement(markup);
 
-    const comments = this._element.querySelector(`.film-card__comments`);
-    this.bind(comments, `click`, this._commentsClickHandler);
+    this.bind();
 
     return this._element;
   }

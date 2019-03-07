@@ -16,6 +16,7 @@ export default class Popup {
 
     this._element = null;
     this._onClose = null;
+    this._closeButtonClickHandler = this._closeButtonClickHandler.bind(this);
   }
 
   _getTemplate() {
@@ -195,27 +196,27 @@ export default class Popup {
     this._onClose = fn;
   }
 
-  bind(element, event, fn) {
-    element.addEventListener(event, fn.bind(this));
+  bind() {
+    const closeButton = this._element.querySelector(`.film-details__close-btn`);
+    closeButton.addEventListener(`click`, this._closeButtonClickHandler);
   }
 
-  unbind(element, event, fn) {
-    element.removeEventListener(event, fn.bind(this));
+  unbind() {
+    const closeButton = this._element.querySelector(`.film-details__close-btn`);
+    closeButton.removeEventListener(`click`, this._closeButtonClickHandler);
   }
 
   render() {
     const markup = this._getTemplate();
     this._element = createElement(markup);
 
-    const closeButton = this._element.querySelector(`.film-details__close-btn`);
-    this.bind(closeButton, `click`, this._closeButtonClickHandler);
+    this.bind();
 
     return this._element;
   }
 
   unrender() {
-    const closeButton = this._element.querySelector(`.film-details__close-btn`);
-    this.unbind(closeButton, `click`, this._closeButtonClickHandler);
+    this.unbind();
 
     this._element = null;
   }
