@@ -1,6 +1,7 @@
 import getNavItemMarkup from './make-nav-item';
-import getCardMarkup from './make-card';
 import getCardData from './card-data';
+import Card from './card';
+import Popup from './popup';
 
 const NAV_ITEMS_NUMBER = 5;
 const CARDS_NUMBER = 7;
@@ -53,15 +54,31 @@ const renderNavItems = (navItemsNumber) => {
 
 const renderCards = (cardsNumber, container, hasControls = true) => {
   container.innerHTML = ``;
-  const cards = [];
+
+  const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < cardsNumber; i++) {
     const data = getCardData();
-    data.hasControls = hasControls;
-    cards.push(data);
 
-    container.innerHTML += getCardMarkup(data);
+    const cardComponent = new Card(data);
+    const popupComponent = new Popup(data);
+
+    const card = cardComponent.render(hasControls);
+
+    cardComponent.onClick = () => {
+      popupComponent.render();
+      document.body.appendChild(popupComponent.element);
+    };
+
+    popupComponent.onClose = () => {
+      document.body.removeChild(popupComponent.element);
+      popupComponent.unrender();
+    };
+
+    fragment.appendChild(card);
   }
+
+  container.appendChild(fragment);
 };
 
 renderNavItems(NAV_ITEMS_NUMBER);
