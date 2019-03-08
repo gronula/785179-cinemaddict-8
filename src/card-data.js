@@ -66,7 +66,8 @@ const getRandomArray = (array) => {
   return newArray;
 };
 
-export default () => ({
+export default (hasControls) => ({
+  hasControls,
   title: getRandomElement(Data.TITLE),
   rating: getRandomFloat(0, 10).toFixed(1),
   year: getRandomInteger(1900, 2018),

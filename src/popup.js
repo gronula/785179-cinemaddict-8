@@ -1,7 +1,9 @@
-import createElement from './create-element';
+import Component from "./component";
 
-export default class Popup {
-  constructor({title, rating, year, duration, genre, posterFile, commentsAmount, description, isWatchlistAdded, isWatched, isFavourite}) {
+export default class Popup extends Component {
+  constructor({hasControls, title, rating, year, duration, genre, posterFile, commentsAmount, description, isWatchlistAdded, isWatched, isFavourite}) {
+    super();
+    this._hasControls = hasControls;
     this._title = title;
     this._rating = rating;
     this._year = year;
@@ -19,7 +21,7 @@ export default class Popup {
     this._closeButtonClickHandler = this._closeButtonClickHandler.bind(this);
   }
 
-  _getTemplate() {
+  get template() {
     return `
     <section class="film-details">
       <form class="film-details__inner" action="" method="get">
@@ -188,36 +190,17 @@ export default class Popup {
     return typeof this._onClose === `function` && this._onClose();
   }
 
-  get element() {
-    return this._element;
-  }
-
   set onClose(fn) {
     this._onClose = fn;
   }
 
-  bind() {
+  createListeners() {
     const closeButton = this._element.querySelector(`.film-details__close-btn`);
     closeButton.addEventListener(`click`, this._closeButtonClickHandler);
   }
 
-  unbind() {
+  removeListeners() {
     const closeButton = this._element.querySelector(`.film-details__close-btn`);
     closeButton.removeEventListener(`click`, this._closeButtonClickHandler);
-  }
-
-  render() {
-    const markup = this._getTemplate();
-    this._element = createElement(markup);
-
-    this.bind();
-
-    return this._element;
-  }
-
-  unrender() {
-    this.unbind();
-
-    this._element = null;
   }
 }
