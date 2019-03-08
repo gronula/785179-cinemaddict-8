@@ -1,7 +1,9 @@
-import createElement from './create-element';
+import Component from "./component";
 
-export default class Card {
-  constructor({title, rating, year, duration, genre, posterFile, commentsAmount, description, isWatchlistAdded, isWatched, isFavourite}) {
+export default class Card extends Component {
+  constructor({hasControls, title, rating, year, duration, genre, posterFile, commentsAmount, description, isWatchlistAdded, isWatched, isFavourite}) {
+    super();
+    this._hasControls = hasControls;
     this._title = title;
     this._rating = rating;
     this._year = year;
@@ -19,9 +21,9 @@ export default class Card {
     this._commentsClickHandler = this._commentsClickHandler.bind(this);
   }
 
-  _getTemplate(hasControls) {
+  get template() {
     return `
-    <article class="film-card  ${hasControls ? `` : `film-card--no-controls`}">
+    <article class="film-card  ${this._hasControls ? `` : `film-card--no-controls`}">
       <h3 class="film-card__title">${this._title}</h3>
       <p class="film-card__rating">${this._rating}</p>
       <p class="film-card__info">
@@ -30,10 +32,10 @@ export default class Card {
         <span class="film-card__genre">${this._genre}</span>
       </p>
       <img src="./images/posters/${this._posterFile}" alt="" class="film-card__poster">
-      ${hasControls ? `<p class="film-card__description">${this._description}</p>` : ``}
+      ${this._hasControls ? `<p class="film-card__description">${this._description}</p>` : ``}
       <button class="film-card__comments">${this._commentsAmount} comments</button>
 
-      ${hasControls ? `
+      ${this._hasControls ? `
       <form class="film-card__controls">
         <button class="film-card__controls-item button film-card__controls-item--add-to-watchlist">Add to watchlist</button>
         <button class="film-card__controls-item button film-card__controls-item--mark-as-watched">Mark as watched</button>
@@ -47,25 +49,12 @@ export default class Card {
     return typeof this._onClick === `function` && this._onClick();
   }
 
-  get element() {
-    return this._element;
-  }
-
   set onClick(fn) {
     this._onClick = fn;
   }
 
-  bind() {
+  createListeners() {
     const comments = this._element.querySelector(`.film-card__comments`);
     comments.addEventListener(`click`, this._commentsClickHandler);
-  }
-
-  render(hasControls) {
-    const markup = this._getTemplate(hasControls);
-    this._element = createElement(markup);
-
-    this.bind();
-
-    return this._element;
   }
 }

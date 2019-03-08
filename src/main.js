@@ -58,12 +58,12 @@ const renderCards = (cardsNumber, container, hasControls = true) => {
   const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < cardsNumber; i++) {
-    const data = getCardData();
+    const data = getCardData(hasControls);
 
     const cardComponent = new Card(data);
     const popupComponent = new Popup(data);
 
-    const card = cardComponent.render(hasControls);
+    const card = cardComponent.render();
 
     cardComponent.onClick = () => {
       popupComponent.render();
