@@ -1,3 +1,5 @@
+import moment from 'moment';
+
 const Data = {
   TITLE: [
     `The Assassination Of Jessie James By The Coward Robert Ford`,
@@ -49,6 +51,7 @@ const Data = {
 };
 
 const getRandomInteger = (min, max) => Math.floor(min + Math.random() * (max + 1 - min));
+const getRandomBoolean = () => Math.floor(Math.random() * 2) === 1 ? true : false;
 const getRandomFloat = (min, max) => Math.random() * (max - min) + min;
 const getRandomElement = (array) => array[Math.floor(Math.random() * array.length)];
 
@@ -66,17 +69,30 @@ const getRandomArray = (array) => {
   return newArray;
 };
 
+const randomDate = (start, end) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+
 export default (hasControls) => ({
   hasControls,
   title: getRandomElement(Data.TITLE),
   rating: getRandomFloat(0, 10).toFixed(1),
-  year: getRandomInteger(1900, 2018),
-  duration: `${getRandomInteger(1, 3)}h&nbsp;${getRandomInteger(0, 59)}m`,
+  userRating: getRandomInteger(1, 9),
+  releaseDate: moment(randomDate(new Date(1900, 0, 1), new Date())).format(`D MMMM Y hh:mm A`),
+  duration: moment.utc(moment.duration({hours: getRandomInteger(1, 3), minutes: getRandomInteger(0, 59)}).asMilliseconds()).format(`h[h]mm[m]`),
   genre: getRandomElement(Data.GENRE),
   posterFile: getRandomElement(Data.POSTER_FILE),
-  commentsAmount: getRandomInteger(0, 500),
+  comments: [`
+  <li class="film-details__comment">
+    <span class="film-details__comment-emoji">😴</span>
+    <div>
+      <p class="film-details__comment-text">So long-long story, boring!</p>
+      <p class="film-details__comment-info">
+        <span class="film-details__comment-author">Tim Macoveev</span>
+        <span class="film-details__comment-day">3 days ago</span>
+      </p>
+    </div>
+  </li>`],
   description: getRandomArray(Data.DESCRIPTION).join(` `),
-  isWatchlistAdded: getRandomInteger(0, 1),
-  isWatched: getRandomInteger(0, 1),
-  isFavourite: getRandomInteger(0, 1),
+  isWatchlistAdded: getRandomBoolean(),
+  isWatched: getRandomBoolean(),
+  isFavourite: getRandomBoolean(),
 });

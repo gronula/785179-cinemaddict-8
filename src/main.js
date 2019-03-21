@@ -63,17 +63,40 @@ const renderCards = (cardsNumber, container, hasControls = true) => {
     const cardComponent = new Card(data);
     const popupComponent = new Popup(data);
 
-    const card = cardComponent.render();
+    let card = cardComponent.render();
 
     cardComponent.onClick = () => {
       popupComponent.render();
       document.body.appendChild(popupComponent.element);
     };
 
-    popupComponent.onClose = () => {
+    popupComponent.onClose = (newObject) => {
+      data.userRating = newObject.userRating;
+      data.comments = newObject.comments;
+      data.isWatchlistAdded = newObject.isWatchlistAdded;
+      data.isWatched = newObject.isWatched;
+      data.isFavourite = newObject.isFavourite;
+
+      cardComponent.update(data);
+      const updatedCard = cardComponent.render();
+      container.replaceChild(updatedCard, card);
+      card = updatedCard;
       document.body.removeChild(popupComponent.element);
       popupComponent.unrender();
     };
+
+    const updateComponent = (newObject) => {
+      data.userRating = newObject.userRating;
+      data.comments = newObject.comments;
+      data.isWatchlistAdded = newObject.isWatchlistAdded;
+      data.isWatched = newObject.isWatched;
+      data.isFavourite = newObject.isFavourite;
+
+      cardComponent.update(data);
+    };
+
+    popupComponent.onRating = updateComponent;
+    popupComponent.onComment = updateComponent;
 
     fragment.appendChild(card);
   }
