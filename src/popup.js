@@ -18,6 +18,7 @@ export default class Popup extends Component {
     this._isWatchlistAdded = isWatchlistAdded;
     this._isWatched = isWatched;
     this._isFavourite = isFavourite;
+    this._commentDate = null;
 
     this._element = null;
 
@@ -109,17 +110,7 @@ export default class Popup extends Component {
           <h3 class="film-details__comments-title">Comments <span class="film-details__comments-count">${this._comments.length}</span></h3>
 
           <ul class="film-details__comments-list">
-            ${this._comments.length > 1 ? this._comments.map((it) => it).join(``) : `
-            <li class="film-details__comment">
-              <span class="film-details__comment-emoji">😴</span>
-              <div>
-                <p class="film-details__comment-text">So long-long story, boring!</p>
-                <p class="film-details__comment-info">
-                  <span class="film-details__comment-author">Tim Macoveev</span>
-                  <span class="film-details__comment-day">3 days ago</span>
-                </p>
-              </div>
-            </li>`}
+            ${this._comments.map((it) => it).join(``)}
           </ul>
 
           <div class="film-details__new-comment">
@@ -179,7 +170,6 @@ export default class Popup extends Component {
   _processForm(formData) {
     const entry = {
       userRating: ``,
-      comments: this._comments,
       isWatchlistAdded: false,
       isWatched: false,
       isFavourite: false,
@@ -211,12 +201,14 @@ export default class Popup extends Component {
   }
 
   _commentCtrlEnterPressHandler(evt) {
-    if (evt.keyCode === 10 && evt.ctrlKey) {
+    if (evt.key === `Enter` && evt.ctrlKey) {
       const commentsList = this._element.querySelector(`.film-details__comments-list`);
       const emoji = this._element.querySelector(`.film-details__add-emoji-label`);
       const commentText = this._element.querySelector(`.film-details__comment-input`);
 
       if (commentText.value.trim()) {
+        // как сделать, чтобы дата отправленного комментария обновлялась со временем.
+        // сейчас постоянно горит a few seconds
         const newCommentMarkup = `
         <li class="film-details__comment">
           <span class="film-details__comment-emoji">${emoji.textContent}</span>
@@ -224,7 +216,7 @@ export default class Popup extends Component {
             <p class="film-details__comment-text">${commentText.value.trim()}</p>
             <p class="film-details__comment-info">
               <span class="film-details__comment-author">Tim Macoveev</span>
-              <span class="film-details__comment-day">${Date.now()}</span>
+              <span class="film-details__comment-day">${moment().fromNow()}</span>
             </p>
           </div>
         </li>`;
@@ -297,7 +289,7 @@ export default class Popup extends Component {
 
     closeButton.addEventListener(`click`, this._closeButtonClickHandler);
     emojiList.addEventListener(`click`, this._emojiListClickHandler);
-    comment.addEventListener(`keypress`, this._commentCtrlEnterPressHandler);
+    comment.addEventListener(`keydown`, this._commentCtrlEnterPressHandler);
     userRating.addEventListener(`click`, this._userRatingButtonsClickHandler);
   }
 
@@ -309,13 +301,12 @@ export default class Popup extends Component {
 
     closeButton.removeEventListener(`click`, this._closeButtonClickHandler);
     emojiList.removeEventListener(`click`, this._emojiListClickHandler);
-    comment.removeEventListener(`keypress`, this._commentCtrlEnterPressHandler);
+    comment.removeEventListener(`keydown`, this._commentCtrlEnterPressHandler);
     userRating.removeEventListener(`click`, this._userRatingButtonsClickHandler);
   }
 
   update(data) {
     this._userRating = data.userRating;
-    this._comments = data.comments;
     this._isWatchlistAdded = data.isWatchlistAdded;
     this._isWatched = data.isWatched;
     this._isFavourite = data.isFavourite;

@@ -62,7 +62,6 @@ export default class Card extends Component {
 
   update(data) {
     this._userRating = data.userRating;
-    this._comments = data.comments;
     this._isWatchlistAdded = data.isWatchlistAdded;
     this._isWatched = data.isWatched;
     this._isFavourite = data.isFavourite;

@@ -69,14 +69,14 @@ const getRandomArray = (array) => {
   return newArray;
 };
 
-const randomDate = (start, end) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+const getRandomDate = (start, end) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 
 export default (hasControls) => ({
   hasControls,
   title: getRandomElement(Data.TITLE),
   rating: getRandomFloat(0, 10).toFixed(1),
   userRating: getRandomInteger(1, 9),
-  releaseDate: moment(randomDate(new Date(1900, 0, 1), new Date())).format(`D MMMM Y hh:mm A`),
+  releaseDate: moment(getRandomDate(new Date(1900, 0, 1), new Date())).format(`D MMMM Y hh:mm A`),
   duration: moment.utc(moment.duration({hours: getRandomInteger(1, 3), minutes: getRandomInteger(0, 59)}).asMilliseconds()).format(`h[h]mm[m]`),
   genre: getRandomElement(Data.GENRE),
   posterFile: getRandomElement(Data.POSTER_FILE),
