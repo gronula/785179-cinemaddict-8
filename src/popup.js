@@ -1,24 +1,35 @@
 import Component from "./component";
+import createElement from './create-element';
+import moment from 'moment';
 
 export default class Popup extends Component {
-  constructor({hasControls, title, rating, year, duration, genre, posterFile, commentsAmount, description, isWatchlistAdded, isWatched, isFavourite}) {
+  constructor({hasControls, title, rating, userRating, releaseDate, duration, genre, posterFile, comments, description, isWatchlistAdded, isWatched, isFavourite}) {
     super();
     this._hasControls = hasControls;
     this._title = title;
     this._rating = rating;
-    this._year = year;
+    this._userRating = userRating;
+    this._releaseDate = releaseDate;
     this._duration = duration;
     this._genre = genre;
     this._posterFile = posterFile;
-    this._commentsAmount = commentsAmount;
+    this._comments = comments;
     this._description = description;
     this._isWatchlistAdded = isWatchlistAdded;
     this._isWatched = isWatched;
     this._isFavourite = isFavourite;
+    this._commentDate = null;
 
     this._element = null;
+
     this._onClose = null;
+    this._onComment = null;
+    this._onRating = null;
+
     this._closeButtonClickHandler = this._closeButtonClickHandler.bind(this);
+    this._emojiListClickHandler = this._emojiListClickHandler.bind(this);
+    this._commentCtrlEnterPressHandler = this._commentCtrlEnterPressHandler.bind(this);
+    this._userRatingButtonsClickHandler = this._userRatingButtonsClickHandler.bind(this);
   }
 
   get template() {
@@ -44,7 +55,7 @@ export default class Popup extends Component {
 
               <div class="film-details__rating">
                 <p class="film-details__total-rating">${this._rating}</p>
-                <p class="film-details__user-rating">Your rate 8</p>
+                <p class="film-details__user-rating">Your rate ${this._userRating}</p>
               </div>
             </div>
 
@@ -63,7 +74,7 @@ export default class Popup extends Component {
               </tr>
               <tr class="film-details__row">
                 <td class="film-details__term">Release Date</td>
-                <td class="film-details__cell">15 June ${this._year} (USA)</td>
+                <td class="film-details__cell">${moment(this._releaseDate, `D MMMM Y hh:mm A`).format(`D MMMM Y`)} (USA)</td>
               </tr>
               <tr class="film-details__row">
                 <td class="film-details__term">Runtime</td>
@@ -96,19 +107,10 @@ export default class Popup extends Component {
         </section>
 
         <section class="film-details__comments-wrap">
-          <h3 class="film-details__comments-title">Comments <span class="film-details__comments-count">${this._commentsAmount}</span></h3>
+          <h3 class="film-details__comments-title">Comments <span class="film-details__comments-count">${this._comments.length}</span></h3>
 
           <ul class="film-details__comments-list">
-            <li class="film-details__comment">
-              <span class="film-details__comment-emoji">😴</span>
-              <div>
-                <p class="film-details__comment-text">So long-long story, boring!</p>
-                <p class="film-details__comment-info">
-                  <span class="film-details__comment-author">Tim Macoveev</span>
-                  <span class="film-details__comment-day">3 days ago</span>
-                </p>
-              </div>
-            </li>
+            ${this._comments.map((it) => it).join(``)}
           </ul>
 
           <div class="film-details__new-comment">
@@ -150,33 +152,13 @@ export default class Popup extends Component {
               <p class="film-details__user-rating-feelings">How you feel it?</p>
 
               <div class="film-details__user-rating-score">
-                <input type="radio" name="score" class="film-details__user-rating-input visually-hidden" value="1" id="rating-1">
-                <label class="film-details__user-rating-label" for="rating-1">1</label>
-
-                <input type="radio" name="score" class="film-details__user-rating-input visually-hidden" value="2" id="rating-2">
-                <label class="film-details__user-rating-label" for="rating-2">2</label>
-
-                <input type="radio" name="score" class="film-details__user-rating-input visually-hidden" value="3" id="rating-3">
-                <label class="film-details__user-rating-label" for="rating-3">3</label>
-
-                <input type="radio" name="score" class="film-details__user-rating-input visually-hidden" value="4" id="rating-4">
-                <label class="film-details__user-rating-label" for="rating-4">4</label>
-
-                <input type="radio" name="score" class="film-details__user-rating-input visually-hidden" value="5" id="rating-5" checked>
-                <label class="film-details__user-rating-label" for="rating-5">5</label>
-
-                <input type="radio" name="score" class="film-details__user-rating-input visually-hidden" value="6" id="rating-6">
-                <label class="film-details__user-rating-label" for="rating-6">6</label>
-
-                <input type="radio" name="score" class="film-details__user-rating-input visually-hidden" value="7" id="rating-7">
-                <label class="film-details__user-rating-label" for="rating-7">7</label>
-
-                <input type="radio" name="score" class="film-details__user-rating-input visually-hidden" value="8" id="rating-8">
-                <label class="film-details__user-rating-label" for="rating-8">8</label>
-
-                <input type="radio" name="score" class="film-details__user-rating-input visually-hidden" value="9" id="rating-9">
-                <label class="film-details__user-rating-label" for="rating-9">9</label>
-
+                ${new Array(9).fill(``).map((it, i) => `
+                  <input type="radio" name="score" class="film-details__user-rating-input visually-hidden"
+                    value="${i + 1}"
+                    id="rating-${i + 1}"
+                    ${Number(this._userRating) === i + 1 ? `checked` : ``}
+                  >
+                  <label class="film-details__user-rating-label" for="rating-${i + 1}">${i + 1}</label>`).join(``)}
               </div>
             </section>
           </div>
@@ -185,22 +167,165 @@ export default class Popup extends Component {
     </section>`;
   }
 
+  _processForm(formData) {
+    const entry = {
+      userRating: ``,
+      isWatchlistAdded: false,
+      isWatched: false,
+      isFavourite: false,
+    };
+
+    const popupMapper = Popup.createMapper(entry);
+
+    for (const pair of formData.entries()) {
+      const [property, value] = pair;
+
+      if (popupMapper[property]) {
+        popupMapper[property](value);
+      }
+    }
+
+    return entry;
+  }
+
   _closeButtonClickHandler(evt) {
     evt.preventDefault();
-    return typeof this._onClose === `function` && this._onClose();
+    const formData = new FormData(this._element.querySelector(`.film-details__inner`));
+    const newData = this._processForm(formData);
+
+    if (typeof this._onClose === `function`) {
+      this._onClose(newData);
+    }
+
+    this.update(newData);
+  }
+
+  _commentCtrlEnterPressHandler(evt) {
+    if (evt.key === `Enter` && evt.ctrlKey) {
+      const commentsList = this._element.querySelector(`.film-details__comments-list`);
+      const emoji = this._element.querySelector(`.film-details__add-emoji-label`);
+      const commentText = this._element.querySelector(`.film-details__comment-input`);
+
+      if (commentText.value.trim()) {
+        // как сделать, чтобы дата отправленного комментария обновлялась со временем.
+        // сейчас постоянно горит a few seconds
+        const newCommentMarkup = `
+        <li class="film-details__comment">
+          <span class="film-details__comment-emoji">${emoji.textContent}</span>
+          <div>
+            <p class="film-details__comment-text">${commentText.value.trim()}</p>
+            <p class="film-details__comment-info">
+              <span class="film-details__comment-author">Tim Macoveev</span>
+              <span class="film-details__comment-day">${moment().fromNow()}</span>
+            </p>
+          </div>
+        </li>`;
+        commentsList.appendChild(createElement(newCommentMarkup));
+        commentText.blur();
+        commentText.value = ``;
+        this._comments.push(newCommentMarkup);
+
+        const commentsAmount = this._element.querySelector(`.film-details__comments-count`);
+        commentsAmount.textContent = this._comments.length;
+      }
+
+      const formData = new FormData(this._element.querySelector(`.film-details__inner`));
+      const newData = this._processForm(formData);
+
+      if (typeof this._onSubmit === `function`) {
+        this._onComment(newData);
+      }
+
+      this.update(newData);
+    }
+  }
+
+  _emojiListClickHandler(evt) {
+    if (evt.target.classList.contains(`film-details__emoji-label`)) {
+      const commentEmoji = this._element.querySelector(`.film-details__add-emoji-label`);
+      commentEmoji.textContent = evt.target.textContent;
+    }
+  }
+
+  _userRatingButtonsClickHandler(evt) {
+    if (evt.target.value) {
+      const formData = new FormData(this._element.querySelector(`.film-details__inner`));
+      const newData = this._processForm(formData);
+
+      if (typeof this._onSubmit === `function`) {
+        this._onRating(newData);
+      }
+
+      this.update(newData);
+
+      const userRating = this._element.querySelector(`.film-details__user-rating`);
+      userRating.textContent = `Your rate ${evt.target.value}`;
+    }
+  }
+
+  _partialUpdate() {
+    const newElement = createElement(this.template);
+    this._element.parentElement.replaceChild(newElement, this._element);
+    this._element = newElement;
   }
 
   set onClose(fn) {
     this._onClose = fn;
   }
 
+  set onComment(fn) {
+    this._onComment = fn;
+  }
+
+  set onRating(fn) {
+    this._onRating = fn;
+  }
+
   createListeners() {
     const closeButton = this._element.querySelector(`.film-details__close-btn`);
+    const emojiList = this._element.querySelector(`.film-details__emoji-list`);
+    const comment = this._element.querySelector(`.film-details__comment-input`);
+    const userRating = this._element.querySelector(`.film-details__user-rating-score`);
+
     closeButton.addEventListener(`click`, this._closeButtonClickHandler);
+    emojiList.addEventListener(`click`, this._emojiListClickHandler);
+    comment.addEventListener(`keydown`, this._commentCtrlEnterPressHandler);
+    userRating.addEventListener(`click`, this._userRatingButtonsClickHandler);
   }
 
   removeListeners() {
     const closeButton = this._element.querySelector(`.film-details__close-btn`);
+    const emojiList = this._element.querySelector(`.film-details__emoji-list`);
+    const comment = this._element.querySelector(`.film-details__comment-input`);
+    const userRating = this._element.querySelector(`.film-details__user-rating-score`);
+
     closeButton.removeEventListener(`click`, this._closeButtonClickHandler);
+    emojiList.removeEventListener(`click`, this._emojiListClickHandler);
+    comment.removeEventListener(`keydown`, this._commentCtrlEnterPressHandler);
+    userRating.removeEventListener(`click`, this._userRatingButtonsClickHandler);
+  }
+
+  update(data) {
+    this._userRating = data.userRating;
+    this._isWatchlistAdded = data.isWatchlistAdded;
+    this._isWatched = data.isWatched;
+    this._isFavourite = data.isFavourite;
+  }
+
+  static createMapper(target) {
+    return {
+      score: (value) => {
+        target.userRating = value;
+      },
+      watchlist: (value) => {
+        target.isWatchlistAdded = value;
+      },
+      watched: (value) => {
+        target.isWatched = value;
+      },
+      favorite: (value) => {
+        target.isFavourite = value;
+      },
+    };
   }
 }
