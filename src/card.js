@@ -2,7 +2,7 @@ import Component from "./component";
 import moment from 'moment';
 
 export default class Card extends Component {
-  constructor({hasControls, title, rating, userRating, releaseDate, duration, genre, posterFile, comments, description, isWatchlistAdded, isWatched, isFavourite}) {
+  constructor({hasControls, title, rating, userRating, releaseDate, duration, genre, posterFile, comments, description, isWatchlistAdded, isWatched, isFavorite}) {
     super();
     this._hasControls = hasControls;
     this._title = title;
@@ -14,13 +14,20 @@ export default class Card extends Component {
     this._posterFile = posterFile;
     this._comments = comments;
     this._description = description;
-    this._isWatchlistAdded = isWatchlistAdded;
-    this._isWatched = isWatched;
-    this._isFavourite = isFavourite;
+    this._state = {
+      isWatchlistAdded,
+      isWatched,
+      isFavorite
+    };
 
     this._element = null;
     this._onClick = null;
+    this._onAddToWatchList = null;
+    this._onMarkAsWatched = null;
     this._commentsClickHandler = this._commentsClickHandler.bind(this);
+    this._addToWatchListButtonClickHandler = this._addToWatchListButtonClickHandler.bind(this);
+    this._markAsWatchedButtonClickHandler = this._markAsWatchedButtonClickHandler.bind(this);
+    this._markAsFavoriteButtonClickHandler = this._markAsFavoriteButtonClickHandler.bind(this);
   }
 
   get template() {
@@ -51,19 +58,64 @@ export default class Card extends Component {
     return typeof this._onClick === `function` && this._onClick();
   }
 
+  _addToWatchListButtonClickHandler() {
+    this._state.isWatchlistAdded = !this._state.isWatchlistAdded;
+
+    if (typeof this._onAddToWatchList === `function`) {
+      this._onAddToWatchList(this._state);
+    }
+  }
+
+  _markAsWatchedButtonClickHandler() {
+    this._state.isWatched = !this._state.isWatched;
+
+    if (typeof this._onMarkAsWatched === `function`) {
+      this._onMarkAsWatched(this._state);
+    }
+  }
+
+  _markAsFavoriteButtonClickHandler() {
+    this._state.isFavorite = !this._state.isFavorite;
+
+    if (typeof this._onMarkAsFavorite === `function`) {
+      this._onMarkAsFavorite(this._state);
+    }
+  }
+
   set onClick(fn) {
     this._onClick = fn;
   }
 
+  set onAddToWatchList(fn) {
+    this._onAddToWatchList = fn;
+  }
+
+  set onMarkAsWatched(fn) {
+    this._onMarkAsWatched = fn;
+  }
+
+  set onMarkAsFavorite(fn) {
+    this._onMarkAsFavorite = fn;
+  }
+
   createListeners() {
     const comments = this._element.querySelector(`.film-card__comments`);
+    const addToWatchListButton = this._element.querySelector(`.film-card__controls-item--add-to-watchlist`);
+    const markAsWatchedButton = this._element.querySelector(`.film-card__controls-item--mark-as-watched`);
+    const markAsFavoriteButton = this._element.querySelector(`.film-card__controls-item--favorite`);
+
     comments.addEventListener(`click`, this._commentsClickHandler);
+
+    if (this._hasControls) {
+      addToWatchListButton.addEventListener(`click`, this._addToWatchListButtonClickHandler);
+      markAsWatchedButton.addEventListener(`click`, this._markAsWatchedButtonClickHandler);
+      markAsFavoriteButton.addEventListener(`click`, this._markAsFavoriteButtonClickHandler);
+    }
   }
 
   update(data) {
-    this._userRating = data.userRating;
-    this._isWatchlistAdded = data.isWatchlistAdded;
-    this._isWatched = data.isWatched;
-    this._isFavourite = data.isFavourite;
+    this._state.isWatchlistAdded = data.isWatchlistAdded;
+    this._state.isWatched = data.isWatched;
+    this._state.isFavorite = data.isFavorite;
   }
 }

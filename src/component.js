@@ -32,7 +32,7 @@ export default class Component {
 
   unrender() {
     this.removeListeners();
-
+    this._element.remove();
     this._element = null;
   }
 

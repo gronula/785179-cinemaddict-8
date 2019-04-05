@@ -3,7 +3,7 @@ import createElement from './create-element';
 import moment from 'moment';
 
 export default class Popup extends Component {
-  constructor({hasControls, title, rating, userRating, releaseDate, duration, genre, posterFile, comments, description, isWatchlistAdded, isWatched, isFavourite}) {
+  constructor({hasControls, title, rating, userRating, releaseDate, duration, genre, posterFile, comments, description, isWatchlistAdded, isWatched, isFavorite}) {
     super();
     this._hasControls = hasControls;
     this._title = title;
@@ -15,9 +15,11 @@ export default class Popup extends Component {
     this._posterFile = posterFile;
     this._comments = comments;
     this._description = description;
-    this._isWatchlistAdded = isWatchlistAdded;
-    this._isWatched = isWatched;
-    this._isFavourite = isFavourite;
+    this._state = {
+      isWatchlistAdded,
+      isWatched,
+      isFavorite
+    };
     this._commentDate = null;
 
     this._element = null;
@@ -30,6 +32,108 @@ export default class Popup extends Component {
     this._emojiListClickHandler = this._emojiListClickHandler.bind(this);
     this._commentCtrlEnterPressHandler = this._commentCtrlEnterPressHandler.bind(this);
     this._userRatingButtonsClickHandler = this._userRatingButtonsClickHandler.bind(this);
+  }
+
+  _processForm(formData) {
+    const entry = {
+      userRating: ``,
+      isWatchlistAdded: false,
+      isWatched: false,
+      isFavorite: false,
+    };
+
+    const popupMapper = Popup.createMapper(entry);
+
+    for (const pair of formData.entries()) {
+      const [property, value] = pair;
+
+      if (popupMapper[property]) {
+        popupMapper[property](value);
+      }
+    }
+
+    return entry;
+  }
+
+  _closeButtonClickHandler(evt) {
+    evt.preventDefault();
+    const formData = new FormData(this._element.querySelector(`.film-details__inner`));
+    const newData = this._processForm(formData);
+
+    if (typeof this._onClose === `function`) {
+      this._onClose(newData);
+    }
+
+    this.update(newData);
+  }
+
+  _commentCtrlEnterPressHandler(evt) {
+    if (evt.key === `Enter` && evt.ctrlKey) {
+      const commentsList = this._element.querySelector(`.film-details__comments-list`);
+      const emoji = this._element.querySelector(`.film-details__add-emoji-label`);
+      const commentText = this._element.querySelector(`.film-details__comment-input`);
+
+      if (commentText.value.trim()) {
+        // как сделать, чтобы дата отправленного комментария обновлялась со временем.
+        // сейчас постоянно горит a few seconds
+        const newCommentMarkup = `
+        <li class="film-details__comment">
+          <span class="film-details__comment-emoji">${emoji.textContent}</span>
+          <div>
+            <p class="film-details__comment-text">${commentText.value.trim()}</p>
+            <p class="film-details__comment-info">
+              <span class="film-details__comment-author">Tim Macoveev</span>
+              <span class="film-details__comment-day">${moment().fromNow()}</span>
+            </p>
+          </div>
+        </li>`;
+        commentsList.appendChild(createElement(newCommentMarkup));
+        commentText.blur();
+        commentText.value = ``;
+        this._comments.push(newCommentMarkup);
+
+        const commentsAmount = this._element.querySelector(`.film-details__comments-count`);
+        commentsAmount.textContent = this._comments.length;
+      }
+
+      const formData = new FormData(this._element.querySelector(`.film-details__inner`));
+      const newData = this._processForm(formData);
+
+      if (typeof this._onComment === `function`) {
+        this._onComment(newData);
+      }
+
+      this.update(newData);
+    }
+  }
+
+  _emojiListClickHandler(evt) {
+    if (evt.target.classList.contains(`film-details__emoji-label`)) {
+      const commentEmoji = this._element.querySelector(`.film-details__add-emoji-label`);
+      commentEmoji.textContent = evt.target.textContent;
+    }
+  }
+
+  _userRatingButtonsClickHandler(evt) {
+    if (evt.target.value) {
+      const formData = new FormData(this._element.querySelector(`.film-details__inner`));
+      const newData = this._processForm(formData);
+
+      if (typeof this._onRating === `function`) {
+        this._onRating(newData);
+      }
+
+      this.update(newData);
+
+      const userRating = this._element.querySelector(`.film-details__user-rating`);
+      userRating.textContent = `Your rate ${evt.target.value}`;
+    }
+  }
+
+  _partialUpdate() {
+    const newElement = createElement(this.template);
+    this._element.parentElement.replaceChild(newElement, this._element);
+    this._element = newElement;
   }
 
   get template() {
@@ -96,13 +200,13 @@ export default class Popup extends Component {
         </div>
 
         <section class="film-details__controls">
-          <input type="checkbox" class="film-details__control-input visually-hidden" id="watchlist" name="watchlist" ${this._isWatchlistAdded ? `checked` : ``}>
+          <input type="checkbox" class="film-details__control-input visually-hidden" id="watchlist" name="watchlist" ${this._state.isWatchlistAdded ? `checked` : ``}>
           <label for="watchlist" class="film-details__control-label film-details__control-label--watchlist">Add to watchlist</label>
 
-          <input type="checkbox" class="film-details__control-input visually-hidden" id="watched" name="watched" ${this._isWatched ? `checked` : ``}>
+          <input type="checkbox" class="film-details__control-input visually-hidden" id="watched" name="watched" ${this._state.isWatched ? `checked` : ``}>
           <label for="watched" class="film-details__control-label film-details__control-label--watched">Already watched</label>
 
-          <input type="checkbox" class="film-details__control-input visually-hidden" id="favorite" name="favorite" ${this._isFavourite ? `checked` : ``}>
+          <input type="checkbox" class="film-details__control-input visually-hidden" id="favorite" name="favorite" ${this._state.isFavorite ? `checked` : ``}>
           <label for="favorite" class="film-details__control-label film-details__control-label--favorite">Add to favorites</label>
         </section>
 
@@ -167,108 +271,6 @@ export default class Popup extends Component {
     </section>`;
   }
 
-  _processForm(formData) {
-    const entry = {
-      userRating: ``,
-      isWatchlistAdded: false,
-      isWatched: false,
-      isFavourite: false,
-    };
-
-    const popupMapper = Popup.createMapper(entry);
-
-    for (const pair of formData.entries()) {
-      const [property, value] = pair;
-
-      if (popupMapper[property]) {
-        popupMapper[property](value);
-      }
-    }
-
-    return entry;
-  }
-
-  _closeButtonClickHandler(evt) {
-    evt.preventDefault();
-    const formData = new FormData(this._element.querySelector(`.film-details__inner`));
-    const newData = this._processForm(formData);
-
-    if (typeof this._onClose === `function`) {
-      this._onClose(newData);
-    }
-
-    this.update(newData);
-  }
-
-  _commentCtrlEnterPressHandler(evt) {
-    if (evt.key === `Enter` && evt.ctrlKey) {
-      const commentsList = this._element.querySelector(`.film-details__comments-list`);
-      const emoji = this._element.querySelector(`.film-details__add-emoji-label`);
-      const commentText = this._element.querySelector(`.film-details__comment-input`);
-
-      if (commentText.value.trim()) {
-        // как сделать, чтобы дата отправленного комментария обновлялась со временем.
-        // сейчас постоянно горит a few seconds
-        const newCommentMarkup = `
-        <li class="film-details__comment">
-          <span class="film-details__comment-emoji">${emoji.textContent}</span>
-          <div>
-            <p class="film-details__comment-text">${commentText.value.trim()}</p>
-            <p class="film-details__comment-info">
-              <span class="film-details__comment-author">Tim Macoveev</span>
-              <span class="film-details__comment-day">${moment().fromNow()}</span>
-            </p>
-          </div>
-        </li>`;
-        commentsList.appendChild(createElement(newCommentMarkup));
-        commentText.blur();
-        commentText.value = ``;
-        this._comments.push(newCommentMarkup);
-
-        const commentsAmount = this._element.querySelector(`.film-details__comments-count`);
-        commentsAmount.textContent = this._comments.length;
-      }
-
-      const formData = new FormData(this._element.querySelector(`.film-details__inner`));
-      const newData = this._processForm(formData);
-
-      if (typeof this._onSubmit === `function`) {
-        this._onComment(newData);
-      }
-
-      this.update(newData);
-    }
-  }
-
-  _emojiListClickHandler(evt) {
-    if (evt.target.classList.contains(`film-details__emoji-label`)) {
-      const commentEmoji = this._element.querySelector(`.film-details__add-emoji-label`);
-      commentEmoji.textContent = evt.target.textContent;
-    }
-  }
-
-  _userRatingButtonsClickHandler(evt) {
-    if (evt.target.value) {
-      const formData = new FormData(this._element.querySelector(`.film-details__inner`));
-      const newData = this._processForm(formData);
-
-      if (typeof this._onSubmit === `function`) {
-        this._onRating(newData);
-      }
-
-      this.update(newData);
-
-      const userRating = this._element.querySelector(`.film-details__user-rating`);
-      userRating.textContent = `Your rate ${evt.target.value}`;
-    }
-  }
-
-  _partialUpdate() {
-    const newElement = createElement(this.template);
-    this._element.parentElement.replaceChild(newElement, this._element);
-    this._element = newElement;
-  }
-
   set onClose(fn) {
     this._onClose = fn;
   }
@@ -307,9 +309,9 @@ export default class Popup extends Component {
 
   update(data) {
     this._userRating = data.userRating;
-    this._isWatchlistAdded = data.isWatchlistAdded;
-    this._isWatched = data.isWatched;
-    this._isFavourite = data.isFavourite;
+    this._state.isWatchlistAdded = data.isWatchlistAdded;
+    this._state.isWatched = data.isWatched;
+    this._state.isFavorite = data.isFavorite;
   }
 
   static createMapper(target) {
@@ -317,14 +319,14 @@ export default class Popup extends Component {
       score: (value) => {
         target.userRating = value;
       },
-      watchlist: (value) => {
-        target.isWatchlistAdded = value;
+      watchlist: () => {
+        target.isWatchlistAdded = true;
       },
-      watched: (value) => {
-        target.isWatched = value;
+      watched: () => {
+        target.isWatched = true;
       },
-      favorite: (value) => {
-        target.isFavourite = value;
+      favorite: () => {
+        target.isFavorite = true;
       },
     };
   }
