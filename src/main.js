@@ -118,5 +118,3 @@ renderFilterElements(filters, mainNav);
 renderCards(mainCards, filmsList);
 renderCards(topRatedCards, filmsListsExtra[0], false);
 renderCards(mostCommentedCards, filmsListsExtra[1], false);
-
-const statisticNavItem = document.querySelector(`.main-navigation__item--additional`);
