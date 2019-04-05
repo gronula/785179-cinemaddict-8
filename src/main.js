@@ -1,122 +1,120 @@
-import getNavItemMarkup from './make-nav-item';
+import getFilterData from './filter-data';
+import Filter from './filter';
 import getCardData from './card-data';
 import Card from './card';
 import Popup from './popup';
+import getStatisticChart from './statistic';
 
-const NAV_ITEMS_NUMBER = 5;
+const FILTERS_NUMBER = 5;
 const CARDS_NUMBER = 7;
-const CARDS_EXTRA_NUMBER = 2;
-
-const NAV_PROPERTIES = [
-  {
-    name: `all`,
-    text: `All movies`
-  },
-  {
-    name: `watchlist`,
-    text: `Watchlist`
-  },
-  {
-    name: `history`,
-    text: `History`
-  },
-  {
-    name: `favorites`,
-    text: `Favorites`
-  },
-  {
-    name: `stats`,
-    text: `Stats`
-  }
-];
 
 const mainNav = document.querySelector(`.main-navigation`);
 const filmsList = document.querySelector(`.films-list  .films-list__container`);
 const filmsListsExtra = document.querySelectorAll(`.films-list--extra  .films-list__container`);
 
-const getRandomInteger = (min, max) => Math.floor(min + Math.random() * (max + 1 - min));
-
-const renderNavItems = (navItemsNumber) => {
-  const randomActiveItemNumber = getRandomInteger(0, navItemsNumber - 1);
-
-  for (let i = 0; i < navItemsNumber; i++) {
-    const properties = {};
-    properties.name = NAV_PROPERTIES[i].name;
-    properties.isActive = i === randomActiveItemNumber ? 1 : 0;
-    properties.isAdditional = i === navItemsNumber - 1 ? 1 : 0;
-    properties.text = NAV_PROPERTIES[i].text;
-    properties.hasCounter = i === 0 || properties.isAdditional ? 0 : 1;
-    properties.amount = getRandomInteger(0, 10);
-
-    mainNav.innerHTML += getNavItemMarkup(properties);
-  }
-};
-
-const renderCards = (cardsNumber, container, hasControls = true) => {
+const renderFilterElements = (filters, container) => {
   container.innerHTML = ``;
 
   const fragment = document.createDocumentFragment();
 
-  for (let i = 0; i < cardsNumber; i++) {
-    const data = getCardData(hasControls);
+  for (const filter of filters) {
+    const filterComponent = new Filter(filter);
+    const filterElement = filterComponent.render();
+    let statisticChart;
 
-    const cardComponent = new Card(data);
-    const popupComponent = new Popup(data);
+    const filterTasks = (cards, filterName) => {
+      switch (filterName) {
+        case `all`: return cards;
+        case `watchlist`: return cards.filter((it) => it.isWatchlistAdded);
+        case `history`: return cards.filter((it) => it.isWatched);
+        case `favorites`: return cards.filter((it) => it.isFavorite);
 
-    let card = cardComponent.render();
+        default: return cards;
+      }
+    };
+
+    filterComponent.onFilter = (target, name) => {
+      const filmsContainer = document.querySelector(`.films`);
+      const statisticContainer = document.querySelector(`.statistic`);
+      const currentFilter = container.querySelector(`.main-navigation__item--active`);
+      currentFilter.classList.remove(`main-navigation__item--active`);
+      target.classList.add(`main-navigation__item--active`);
+
+      if (name === `stats`) {
+        filmsContainer.classList.add(`visually-hidden`);
+        statisticContainer.classList.remove(`visually-hidden`);
+
+        if (statisticChart) {
+          statisticChart.destroy();
+        }
+        statisticChart = getStatisticChart(mainCards);
+      } else {
+        const filteredTasks = filterTasks(mainCards, name.toLowerCase());
+        renderCards(filteredTasks, filmsList);
+        filmsContainer.classList.remove(`visually-hidden`);
+        statisticContainer.classList.add(`visually-hidden`);
+      }
+    };
+
+    fragment.appendChild(filterElement);
+  }
+
+  container.appendChild(fragment);
+};
+
+const renderCards = (cards, container, hasControls = true) => {
+  container.innerHTML = ``;
+
+  const fragment = document.createDocumentFragment();
+
+  for (const card of cards) {
+    card.hasControls = hasControls;
+    const cardComponent = new Card(card);
+    const popupComponent = new Popup(card);
+
+    let cardElement = cardComponent.render();
+
+    const updateComponent = (newObject) => {
+      Object.assign(card, newObject);
+
+      cardComponent.update(card);
+      popupComponent.update(card);
+    };
 
     cardComponent.onClick = () => {
       popupComponent.render();
       document.body.appendChild(popupComponent.element);
     };
 
+    cardComponent.onAddToWatchList = updateComponent;
+    cardComponent.onMarkAsWatched = updateComponent;
+    cardComponent.onMarkAsFavorite = updateComponent;
+
     popupComponent.onClose = (newObject) => {
-      data.userRating = newObject.userRating;
-      data.comments = newObject.comments;
-      data.isWatchlistAdded = newObject.isWatchlistAdded;
-      data.isWatched = newObject.isWatched;
-      data.isFavourite = newObject.isFavourite;
+      Object.assign(card, newObject);
 
-      cardComponent.update(data);
-      const updatedCard = cardComponent.render();
-      container.replaceChild(updatedCard, card);
-      card = updatedCard;
-      document.body.removeChild(popupComponent.element);
+      cardComponent.update(card);
+      const updatedCardElement = cardComponent.render();
+      container.replaceChild(updatedCardElement, cardElement);
+      cardElement = updatedCardElement;
       popupComponent.unrender();
-    };
-
-    const updateComponent = (newObject) => {
-      data.userRating = newObject.userRating;
-      data.comments = newObject.comments;
-      data.isWatchlistAdded = newObject.isWatchlistAdded;
-      data.isWatched = newObject.isWatched;
-      data.isFavourite = newObject.isFavourite;
-
-      cardComponent.update(data);
     };
 
     popupComponent.onRating = updateComponent;
     popupComponent.onComment = updateComponent;
 
-    fragment.appendChild(card);
+    fragment.appendChild(cardElement);
   }
 
   container.appendChild(fragment);
 };
 
-renderNavItems(NAV_ITEMS_NUMBER);
-renderCards(CARDS_NUMBER, filmsList);
-filmsListsExtra.forEach((it) => renderCards(CARDS_EXTRA_NUMBER, it, false));
+const filters = new Array(FILTERS_NUMBER).fill().map((_it, i) => getFilterData(i));
+const mainCards = new Array(CARDS_NUMBER).fill().map(() => getCardData());
+const topRatedCards = mainCards.slice().sort((a, b) => b.rating - a.rating).splice(0, 2);
+const mostCommentedCards = mainCards.slice().sort((a, b) => b.comments.length - a.comments.length).splice(0, 2);
 
-const navItems = mainNav.querySelectorAll(`.main-navigation__item`);
-const navItemClickHandler = (evt) => {
-  navItems.forEach((it) => it.classList.remove(`main-navigation__item--active`));
-  evt.currentTarget.classList.add(`main-navigation__item--active`);
-
-  const cardsNumber = getRandomInteger(1, 8);
-  const cardsExtraNumber = getRandomInteger(1, 4);
-
-  renderCards(cardsNumber, filmsList);
-  filmsListsExtra.forEach((it) => renderCards(cardsExtraNumber, it, false));
-};
-navItems.forEach((it) => it.addEventListener(`click`, navItemClickHandler));
+renderFilterElements(filters, mainNav);
+renderCards(mainCards, filmsList);
+renderCards(topRatedCards, filmsListsExtra[0], false);
+renderCards(mostCommentedCards, filmsListsExtra[1], false);

@@ -71,8 +71,7 @@ const getRandomArray = (array) => {
 
 const getRandomDate = (start, end) => new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 
-export default (hasControls) => ({
-  hasControls,
+export default () => ({
   title: getRandomElement(Data.TITLE),
   rating: getRandomFloat(0, 10).toFixed(1),
   userRating: getRandomInteger(1, 9),
@@ -94,5 +93,5 @@ export default (hasControls) => ({
   description: getRandomArray(Data.DESCRIPTION).join(` `),
   isWatchlistAdded: getRandomBoolean(),
   isWatched: getRandomBoolean(),
-  isFavourite: getRandomBoolean(),
+  isFavorite: getRandomBoolean(),
 });
