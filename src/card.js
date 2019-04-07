@@ -2,22 +2,38 @@ import Component from "./component";
 import moment from 'moment';
 
 export default class Card extends Component {
-  constructor({hasControls, title, rating, userRating, releaseDate, duration, genre, posterFile, comments, description, isWatchlistAdded, isWatched, isFavorite}) {
+  constructor({hasControls, id, comments, filmInfo, userDetails}) {
     super();
+
     this._hasControls = hasControls;
-    this._title = title;
-    this._rating = rating;
-    this._userRating = userRating;
-    this._releaseDate = releaseDate;
-    this._duration = duration;
-    this._genre = genre;
-    this._posterFile = posterFile;
+    this._id = id;
     this._comments = comments;
-    this._description = description;
+    this._filmInfo = {
+      actors: filmInfo.actors,
+      ageRating: filmInfo.ageRating,
+      alternativeTitle: filmInfo.alternativeTitle,
+      description: filmInfo.description,
+      director: filmInfo.director,
+      genre: filmInfo.genre,
+      poster: filmInfo.poster,
+      release: {
+        date: filmInfo.release.date,
+        releaseCountry: filmInfo.release.releaseCountry,
+      },
+      runtime: filmInfo.runtime,
+      title: filmInfo.title,
+      totalRating: filmInfo.totalRating,
+      writers: filmInfo.writers,
+    };
+    this._userDetails = {
+      watchlist: userDetails.watchlist,
+      alreadyWatched: userDetails.alreadyWatched,
+      favorite: userDetails.favorite,
+      personalRating: userDetails.personalRating,
+      watchingDate: userDetails.watchingDate,
+    };
+
     this._state = {
-      isWatchlistAdded,
-      isWatched,
-      isFavorite
     };
 
     this._element = null;
@@ -33,15 +49,15 @@ export default class Card extends Component {
   get template() {
     return `
     <article class="film-card  ${this._hasControls ? `` : `film-card--no-controls`}">
-      <h3 class="film-card__title">${this._title}</h3>
-      <p class="film-card__rating">${this._rating}</p>
+      <h3 class="film-card__title">${this._filmInfo.title}</h3>
+      <p class="film-card__rating">${this._filmInfo.totalRating}</p>
       <p class="film-card__info">
-        <span class="film-card__releaseDate">${moment(this._releaseDate, `D MMMM Y hh:mm A`).format(`D MMMM Y`)}</span>
-        <span class="film-card__duration">${this._duration}</span>
-        <span class="film-card__genre">${this._genre}</span>
+        <span class="film-card__releaseDate">${moment(this._filmInfo.release.date).format(`D MMMM Y`)}</span>
+        <span class="film-card__duration">${moment.utc(moment.duration(this._filmInfo.runtime, `m`).asMilliseconds()).format(`h[h]mm[m]`)}</span>
+        <span class="film-card__genre">${this._filmInfo.genre.join(`, `)}</span>
       </p>
-      <img src="./images/posters/${this._posterFile}" alt="" class="film-card__poster">
-      ${this._hasControls ? `<p class="film-card__description">${this._description}</p>` : ``}
+      <img src="${this._filmInfo.poster}" alt="" class="film-card__poster">
+      ${this._hasControls ? `<p class="film-card__description">${this._filmInfo.description}</p>` : ``}
       <button class="film-card__comments">${this._comments.length} comments</button>
 
       ${this._hasControls ? `
@@ -59,26 +75,26 @@ export default class Card extends Component {
   }
 
   _addToWatchListButtonClickHandler() {
-    this._state.isWatchlistAdded = !this._state.isWatchlistAdded;
+    this._userDetails.watchlist = !this._userDetails.watchlist;
 
     if (typeof this._onAddToWatchList === `function`) {
-      this._onAddToWatchList(this._state);
+      this._onAddToWatchList(this._userDetails);
     }
   }
 
   _markAsWatchedButtonClickHandler() {
-    this._state.isWatched = !this._state.isWatched;
+    this._userDetails.alreadyWatched = !this._userDetails.alreadyWatched;
 
     if (typeof this._onMarkAsWatched === `function`) {
-      this._onMarkAsWatched(this._state);
+      this._onMarkAsWatched(this._userDetails);
     }
   }
 
   _markAsFavoriteButtonClickHandler() {
-    this._state.isFavorite = !this._state.isFavorite;
+    this._userDetails.favorite = !this._userDetails.favorite;
 
     if (typeof this._onMarkAsFavorite === `function`) {
-      this._onMarkAsFavorite(this._state);
+      this._onMarkAsFavorite(this._userDetails);
     }
   }
 
@@ -114,8 +130,8 @@ export default class Card extends Component {
   }
 
   update(data) {
-    this._state.isWatchlistAdded = data.isWatchlistAdded;
-    this._state.isWatched = data.isWatched;
-    this._state.isFavorite = data.isFavorite;
+    this._userDetails.watchlist = data.watchlist;
+    this._userDetails.alreadyWatched = data.alreadyWatched;
+    this._userDetails.favorite = data.favorite;
   }
 }

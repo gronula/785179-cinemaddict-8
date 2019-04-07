@@ -91,7 +91,7 @@ export default () => ({
     </div>
   </li>`],
   description: getRandomArray(Data.DESCRIPTION).join(` `),
-  isWatchlistAdded: getRandomBoolean(),
-  isWatched: getRandomBoolean(),
-  isFavorite: getRandomBoolean(),
+  watchlist: getRandomBoolean(),
+  alreadyWatched: getRandomBoolean(),
+  favorite: getRandomBoolean(),
 });

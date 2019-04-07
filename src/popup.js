@@ -2,23 +2,54 @@ import Component from "./component";
 import createElement from './create-element';
 import moment from 'moment';
 
+const COMMENT_AUTHORS = [
+  `Jon Snow`,
+  `Daenerys Targaryen`,
+  `Tyrion Lannister`,
+  `Sansa Stark`,
+];
+
+const EMOJIES = {
+  [`sleeping`]: `😴`,
+  [`neutral-face`]: `😐`,
+  [`grinning`]: `😀`,
+};
+
+const getRandomElement = (array) => array[Math.floor(Math.random() * array.length)];
+
 export default class Popup extends Component {
-  constructor({hasControls, title, rating, userRating, releaseDate, duration, genre, posterFile, comments, description, isWatchlistAdded, isWatched, isFavorite}) {
+  constructor({hasControls, id, comments, filmInfo, userDetails}) {
     super();
+
     this._hasControls = hasControls;
-    this._title = title;
-    this._rating = rating;
-    this._userRating = userRating;
-    this._releaseDate = releaseDate;
-    this._duration = duration;
-    this._genre = genre;
-    this._posterFile = posterFile;
+    this._id = id;
     this._comments = comments;
-    this._description = description;
+    this._filmInfo = {
+      actors: filmInfo.actors,
+      ageRating: filmInfo.ageRating,
+      alternativeTitle: filmInfo.alternativeTitle,
+      description: filmInfo.description,
+      director: filmInfo.director,
+      genre: filmInfo.genre,
+      poster: filmInfo.poster,
+      release: {
+        date: filmInfo.release.date,
+        releaseCountry: filmInfo.release.releaseCountry,
+      },
+      runtime: filmInfo.runtime,
+      title: filmInfo.title,
+      totalRating: filmInfo.totalRating,
+      writers: filmInfo.writers,
+    };
+    this._userDetails = {
+      watchlist: userDetails.watchlist,
+      alreadyWatched: userDetails.alreadyWatched,
+      favorite: userDetails.favorite,
+      personalRating: userDetails.personalRating,
+      watchingDate: userDetails.watchingDate,
+    };
+
     this._state = {
-      isWatchlistAdded,
-      isWatched,
-      isFavorite
     };
     this._commentDate = null;
 
@@ -37,9 +68,9 @@ export default class Popup extends Component {
   _processForm(formData) {
     const entry = {
       userRating: ``,
-      isWatchlistAdded: false,
-      isWatched: false,
-      isFavorite: false,
+      watchlist: false,
+      alreadyWatched: false,
+      favorite: false,
     };
 
     const popupMapper = Popup.createMapper(entry);
@@ -69,38 +100,40 @@ export default class Popup extends Component {
 
   _commentCtrlEnterPressHandler(evt) {
     if (evt.key === `Enter` && evt.ctrlKey) {
-      const commentsList = this._element.querySelector(`.film-details__comments-list`);
-      const emoji = this._element.querySelector(`.film-details__add-emoji-label`);
-      const commentText = this._element.querySelector(`.film-details__comment-input`);
+      const emoji = this._element.querySelector(`.film-details__add-emoji`);
+      const commentTextarea = this._element.querySelector(`.film-details__comment-input`);
+      const newComment = {
+        author: getRandomElement(COMMENT_AUTHORS),
+        comment: commentTextarea.value.trim(),
+        date: moment(),
+        emotion: Object.keys(EMOJIES)[Object.values(EMOJIES).indexOf(emoji.previousElementSibling.textContent)],
+      };
 
-      if (commentText.value.trim()) {
-        // как сделать, чтобы дата отправленного комментария обновлялась со временем.
-        // сейчас постоянно горит a few seconds
-        const newCommentMarkup = `
-        <li class="film-details__comment">
-          <span class="film-details__comment-emoji">${emoji.textContent}</span>
-          <div>
-            <p class="film-details__comment-text">${commentText.value.trim()}</p>
-            <p class="film-details__comment-info">
-              <span class="film-details__comment-author">Tim Macoveev</span>
-              <span class="film-details__comment-day">${moment().fromNow()}</span>
-            </p>
-          </div>
-        </li>`;
-        commentsList.appendChild(createElement(newCommentMarkup));
-        commentText.blur();
-        commentText.value = ``;
-        this._comments.push(newCommentMarkup);
+      this._comments.push(newComment);
 
-        const commentsAmount = this._element.querySelector(`.film-details__comments-count`);
-        commentsAmount.textContent = this._comments.length;
-      }
+      const newCommentMarkup = `
+      <li class="film-details__comment">
+        <span class="film-details__comment-emoji">${EMOJIES[newComment.emotion]}</span>
+        <div>
+          <p class="film-details__comment-text">${newComment.comment}</p>
+          <p class="film-details__comment-info">
+            <span class="film-details__comment-author">${newComment.author}</span>
+            <span class="film-details__comment-day">${moment(newComment.date).fromNow()}</span>
+          </p>
+        </div>
+      </li>`;
+
+      const newCommentElement = createElement(newCommentMarkup);
+
+      commentTextarea.style.borderColor = ``;
+      commentTextarea.disabled = true;
+      emoji.disabled = true;
 
       const formData = new FormData(this._element.querySelector(`.film-details__inner`));
       const newData = this._processForm(formData);
 
       if (typeof this._onComment === `function`) {
-        this._onComment(newData);
+        this._onComment(newData, newCommentElement);
       }
 
       this.update(newData);
@@ -116,17 +149,24 @@ export default class Popup extends Component {
 
   _userRatingButtonsClickHandler(evt) {
     if (evt.target.value) {
+      const ratingButtons = this._element.querySelectorAll(`.film-details__user-rating-input`);
+      const ratingButtonLabels = this._element.querySelectorAll(`.film-details__user-rating-label`);
+
+      ratingButtons.forEach((it) => {
+        it.disabled = true;
+      });
+      ratingButtonLabels.forEach((it) => {
+        it.style.backgroundColor = ``;
+      });
+
       const formData = new FormData(this._element.querySelector(`.film-details__inner`));
       const newData = this._processForm(formData);
 
       if (typeof this._onRating === `function`) {
-        this._onRating(newData);
+        this._onRating(evt, newData);
       }
 
       this.update(newData);
-
-      const userRating = this._element.querySelector(`.film-details__user-rating`);
-      userRating.textContent = `Your rate ${evt.target.value}`;
     }
   }
 
@@ -145,44 +185,44 @@ export default class Popup extends Component {
         </div>
         <div class="film-details__info-wrap">
           <div class="film-details__poster">
-            <img class="film-details__poster-img" src="images/posters/${this._posterFile}" alt="incredables-2">
+            <img class="film-details__poster-img" src="${this._filmInfo.poster}" alt="incredables-2">
 
-            <p class="film-details__age">18+</p>
+            <p class="film-details__age">${this._filmInfo.ageRating}+</p>
           </div>
 
           <div class="film-details__info">
             <div class="film-details__info-head">
               <div class="film-details__title-wrap">
-                <h3 class="film-details__title">${this._title}</h3>
-                <p class="film-details__title-original">Original: Невероятная семейка</p>
+                <h3 class="film-details__title">${this._filmInfo.title}</h3>
+                <p class="film-details__title-original">Original: ${this._filmInfo.alternativeTitle}</p>
               </div>
 
               <div class="film-details__rating">
-                <p class="film-details__total-rating">${this._rating}</p>
-                <p class="film-details__user-rating">Your rate ${this._userRating}</p>
+                <p class="film-details__total-rating">${this._filmInfo.totalRating}</p>
+                <p class="film-details__user-rating">Your rate ${this._userDetails.personalRating}</p>
               </div>
             </div>
 
             <table class="film-details__table">
               <tr class="film-details__row">
                 <td class="film-details__term">Director</td>
-                <td class="film-details__cell">Brad Bird</td>
+                <td class="film-details__cell">${this._filmInfo.director}</td>
               </tr>
               <tr class="film-details__row">
                 <td class="film-details__term">Writers</td>
-                <td class="film-details__cell">Brad Bird</td>
+                <td class="film-details__cell">${this._filmInfo.writers.join(`, `)}</td>
               </tr>
               <tr class="film-details__row">
                 <td class="film-details__term">Actors</td>
-                <td class="film-details__cell">Samuel L. Jackson, Catherine Keener, Sophia Bush</td>
+                <td class="film-details__cell">${this._filmInfo.actors.join(`, `)}</td>
               </tr>
               <tr class="film-details__row">
                 <td class="film-details__term">Release Date</td>
-                <td class="film-details__cell">${moment(this._releaseDate, `D MMMM Y hh:mm A`).format(`D MMMM Y`)} (USA)</td>
+                <td class="film-details__cell">${moment(this._filmInfo.release.date).format(`D MMMM Y`)} (USA)</td>
               </tr>
               <tr class="film-details__row">
                 <td class="film-details__term">Runtime</td>
-                <td class="film-details__cell">${this._duration}</td>
+                <td class="film-details__cell">${this._filmInfo.runtime}m</td>
               </tr>
               <tr class="film-details__row">
                 <td class="film-details__term">Country</td>
@@ -191,22 +231,22 @@ export default class Popup extends Component {
               <tr class="film-details__row">
                 <td class="film-details__term">Genres</td>
                 <td class="film-details__cell">
-                  <span class="film-details__genre">${this._genre}</span>
+                  <span class="film-details__genre">${this._filmInfo.genre.join(`, `)}</span>
               </tr>
             </table>
 
-            <p class="film-details__film-description">${this._description}</p>
+            <p class="film-details__film-description">${this._filmInfo.description}</p>
           </div>
         </div>
 
         <section class="film-details__controls">
-          <input type="checkbox" class="film-details__control-input visually-hidden" id="watchlist" name="watchlist" ${this._state.isWatchlistAdded ? `checked` : ``}>
+          <input type="checkbox" class="film-details__control-input visually-hidden" id="watchlist" name="watchlist" ${this._userDetails.watchlist ? `checked` : ``}>
           <label for="watchlist" class="film-details__control-label film-details__control-label--watchlist">Add to watchlist</label>
 
-          <input type="checkbox" class="film-details__control-input visually-hidden" id="watched" name="watched" ${this._state.isWatched ? `checked` : ``}>
+          <input type="checkbox" class="film-details__control-input visually-hidden" id="watched" name="watched" ${this._userDetails.alreadyWatched ? `checked` : ``}>
           <label for="watched" class="film-details__control-label film-details__control-label--watched">Already watched</label>
 
-          <input type="checkbox" class="film-details__control-input visually-hidden" id="favorite" name="favorite" ${this._state.isFavorite ? `checked` : ``}>
+          <input type="checkbox" class="film-details__control-input visually-hidden" id="favorite" name="favorite" ${this._userDetails.favorite ? `checked` : ``}>
           <label for="favorite" class="film-details__control-label film-details__control-label--favorite">Add to favorites</label>
         </section>
 
@@ -214,7 +254,17 @@ export default class Popup extends Component {
           <h3 class="film-details__comments-title">Comments <span class="film-details__comments-count">${this._comments.length}</span></h3>
 
           <ul class="film-details__comments-list">
-            ${this._comments.map((it) => it).join(``)}
+            ${this._comments.map((it) => `
+            <li class="film-details__comment">
+              <span class="film-details__comment-emoji">${EMOJIES[it.emotion]}</span>
+              <div>
+                <p class="film-details__comment-text">${it.comment}</p>
+                <p class="film-details__comment-info">
+                  <span class="film-details__comment-author">${it.author}</span>
+                  <span class="film-details__comment-day">${moment(it.date).fromNow()}</span>
+                </p>
+              </div>
+            </li>`).join(``)}
           </ul>
 
           <div class="film-details__new-comment">
@@ -241,17 +291,17 @@ export default class Popup extends Component {
 
         <section class="film-details__user-rating-wrap">
           <div class="film-details__user-rating-controls">
-            <span class="film-details__watched-status film-details__watched-status--active">Already watched</span>
+            <span class="film-details__watched-status ${this._userDetails.alreadyWatched ? `film-details__watched-status--active` : ``}">${this._userDetails.alreadyWatched ? `Alredy watched` : `Will watch`}</span>
             <button class="film-details__watched-reset" type="button">undo</button>
           </div>
 
           <div class="film-details__user-score">
             <div class="film-details__user-rating-poster">
-              <img src="images/posters/${this._posterFile}" alt="film-poster" class="film-details__user-rating-img">
+              <img src="${this._filmInfo.poster}" alt="film-poster" class="film-details__user-rating-img">
             </div>
 
             <section class="film-details__user-rating-inner">
-              <h3 class="film-details__user-rating-title">${this._title}</h3>
+              <h3 class="film-details__user-rating-title">${this._filmInfo.title}</h3>
 
               <p class="film-details__user-rating-feelings">How you feel it?</p>
 
@@ -260,7 +310,7 @@ export default class Popup extends Component {
                   <input type="radio" name="score" class="film-details__user-rating-input visually-hidden"
                     value="${i + 1}"
                     id="rating-${i + 1}"
-                    ${Number(this._userRating) === i + 1 ? `checked` : ``}
+                    ${Number(this._userDetails.personalRating) === i + 1 ? `checked` : ``}
                   >
                   <label class="film-details__user-rating-label" for="rating-${i + 1}">${i + 1}</label>`).join(``)}
               </div>
@@ -308,10 +358,20 @@ export default class Popup extends Component {
   }
 
   update(data) {
-    this._userRating = data.userRating;
-    this._state.isWatchlistAdded = data.isWatchlistAdded;
-    this._state.isWatched = data.isWatched;
-    this._state.isFavorite = data.isFavorite;
+    this._userDetails.personalRating = data.userRating;
+    this._userDetails.watchlist = data.watchlist;
+    this._userDetails.alreadyWatched = data.alreadyWatched;
+    this._userDetails.favorite = data.favorite;
+  }
+
+  shake(element) {
+    const ANIMATION_TIMEOUT = 600;
+
+    element.style.animation = `shake ${ANIMATION_TIMEOUT / 1000}s`;
+
+    setTimeout(() => {
+      element.style.animation = ``;
+    }, ANIMATION_TIMEOUT);
   }
 
   static createMapper(target) {
@@ -320,13 +380,13 @@ export default class Popup extends Component {
         target.userRating = value;
       },
       watchlist: () => {
-        target.isWatchlistAdded = true;
+        target.watchlist = true;
       },
       watched: () => {
-        target.isWatched = true;
+        target.alreadyWatched = true;
       },
       favorite: () => {
-        target.isFavorite = true;
+        target.favorite = true;
       },
     };
   }

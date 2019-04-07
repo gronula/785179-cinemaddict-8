@@ -12,7 +12,7 @@ const getChartData = (cards) => {
     totalDuration: ``
   };
   cards.forEach((it) => {
-    if (it.isWatched) {
+    if (it.alreadyWatched) {
       if (statistics.genres.name.indexOf(it.genre) === -1) {
         statistics.genres.name.push(it.genre);
         statistics.genres.amount.push(1);
