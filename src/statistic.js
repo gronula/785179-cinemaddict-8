@@ -2,6 +2,12 @@ import Chart from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import moment from 'moment';
 
+const RANKS = [
+  `novice`,
+  `fan`,
+  `movie buff`,
+];
+
 const getChartData = (cards) => {
   const statistics = {
     genres: [],
@@ -36,7 +42,7 @@ const getChartData = (cards) => {
     });
   });
 
-  statistics.genres.sort((a, b) => b.amount - a.amount);
+  statistics.genres.sort((a, b) => b.amount - a.amount || (b.name < a.name) - (a.name < b.name));
 
   return statistics;
 };
@@ -44,17 +50,30 @@ const getChartData = (cards) => {
 export default (cards) => {
   const chartData = getChartData(cards);
 
-  const statisticCtx = document.querySelector(`.statistic__chart`);
-  const BAR_HEIGHT = 50;
-  statisticCtx.height = BAR_HEIGHT * chartData.genres.length;
-
   const totalWatched = document.querySelector(`.statistic__text-item:nth-of-type(1)  .statistic__item-text`);
   const totalDuration = document.querySelector(`.statistic__text-item:nth-of-type(2)  .statistic__item-text`);
   const totalGenre = document.querySelector(`.statistic__text-item:nth-of-type(3)  .statistic__item-text`);
 
   totalWatched.innerHTML = `${chartData.totalWatched} <span class="statistic__item-description">movies</span>`;
   totalDuration.innerHTML = `${moment.duration(chartData.totalDuration).get(`d`) * 24 + moment.duration(chartData.totalDuration).get(`h`)} <span class="statistic__item-description">h</span> ${moment.duration(chartData.totalDuration).get(`m`)} <span class="statistic__item-description">m</span>`;
-  totalGenre.innerHTML = `${chartData.genres[0].name}`;
+  totalGenre.innerHTML = chartData.genres.length ? `${chartData.genres[0].name}` : `-`;
+
+  const statisticRankLabel = document.querySelector(`.statistic__rank-label`);
+  if (chartData.totalWatched < 10) {
+    statisticRankLabel.innerHTML = RANKS[0];
+  } else if (chartData.totalWatched >= 10 && chartData.totalWatched < 20) {
+    statisticRankLabel.innerHTML = RANKS[1];
+  } else {
+    statisticRankLabel.innerHTML = RANKS[2];
+  }
+
+  const statisticCtx = document.querySelector(`.statistic__chart`);
+  const BAR_HEIGHT = 50;
+  statisticCtx.height = BAR_HEIGHT * chartData.genres.length;
+
+  if (statisticCtx.height === 0) {
+    return false;
+  }
 
   return new Chart(statisticCtx, {
     plugins: [ChartDataLabels],

@@ -1,13 +1,13 @@
-export default class ModelTask {
+export default class ModelCard {
   constructor(data) {
-    this.id = data[`id`];
+    this.id = data.id;
     this.comments = data.comments.map((it) => {
       it.date = new Date(it.date);
       return it;
     });
     this.filmInfo = {
       actors: data[`film_info`][`actors`] || [],
-      ageRating: data[`film_info`][`age_rating`] || ``,
+      ageRating: data[`film_info`][`age_rating`],
       alternativeTitle: data[`film_info`][`alternative_title`] || ``,
       description: data[`film_info`][`description`] || ``,
       director: data[`film_info`][`director`] || ``,
@@ -35,16 +35,35 @@ export default class ModelTask {
     return {
       [`id`]: this.id,
       [`comments`]: this.comments,
-      [`film_info`]: this.filmInfo,
-      [`user_details`]: this.userDetails,
+      [`film_info`]: {
+        [`actors`]: this.filmInfo.actors,
+        [`age_rating`]: this.filmInfo.ageRating,
+        [`alternative_title`]: this.filmInfo.alternativeTitle,
+        [`description`]: this.filmInfo.description,
+        [`director`]: this.filmInfo.director,
+        [`genre`]: this.filmInfo.genre,
+        [`poster`]: this.filmInfo.poster,
+        [`release`]: this.filmInfo.release,
+        [`runtime`]: this.filmInfo.runtime,
+        [`title`]: this.filmInfo.title,
+        [`total_rating`]: this.filmInfo.totalRating,
+        [`writers`]: this.filmInfo.writers,
+      },
+      [`user_details`]: {
+        [`already_watched`]: this.userDetails.alreadyWatched,
+        [`favorite`]: this.userDetails.favorite,
+        [`personal_rating`]: this.userDetails.personalRating,
+        [`watching_date`]: this.userDetails.watchingDate,
+        [`watchlist`]: this.userDetails.watchlist,
+      }
     };
   }
 
-  static parseTask(data) {
-    return new ModelTask(data);
+  static parseCard(data) {
+    return new ModelCard(data);
   }
 
-  static parseTasks(data) {
-    return data.map(ModelTask.parseTask);
+  static parseCards(data) {
+    return data.map(ModelCard.parseCard);
   }
 }
