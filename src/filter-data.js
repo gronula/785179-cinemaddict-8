@@ -21,11 +21,8 @@ const FILTERS = [
   }
 ];
 
-const getRandomInteger = (min, max) => Math.floor(min + Math.random() * (max + 1 - min));
-
 export default (orderNumber) => ({
   orderNumber,
   name: FILTERS[orderNumber].name,
   text: FILTERS[orderNumber].text,
-  amount: getRandomInteger(0, 10)
 });

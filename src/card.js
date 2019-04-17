@@ -31,15 +31,14 @@ export default class Card extends Component {
       favorite: userDetails.favorite,
       personalRating: userDetails.personalRating,
       watchingDate: userDetails.watchingDate,
-    };
-
-    this._state = {
+      userName: userDetails.userName,
     };
 
     this._element = null;
     this._onClick = null;
     this._onAddToWatchList = null;
     this._onMarkAsWatched = null;
+    this._onMarkAsFavorite = null;
     this._commentsClickHandler = this._commentsClickHandler.bind(this);
     this._addToWatchListButtonClickHandler = this._addToWatchListButtonClickHandler.bind(this);
     this._markAsWatchedButtonClickHandler = this._markAsWatchedButtonClickHandler.bind(this);
@@ -53,7 +52,7 @@ export default class Card extends Component {
       <p class="film-card__rating">${this._filmInfo.totalRating}</p>
       <p class="film-card__info">
         <span class="film-card__releaseDate">${moment(this._filmInfo.release.date).format(`D MMMM Y`)}</span>
-        <span class="film-card__duration">${moment.utc(moment.duration(this._filmInfo.runtime, `m`).asMilliseconds()).format(`h[h]mm[m]`)}</span>
+        <span class="film-card__duration">${moment.utc(moment.duration(this._filmInfo.runtime, `m`).asMilliseconds()).format(`h:mm`)}</span>
         <span class="film-card__genre">${this._filmInfo.genre.join(`, `)}</span>
       </p>
       <img src="${this._filmInfo.poster}" alt="" class="film-card__poster">
@@ -130,8 +129,8 @@ export default class Card extends Component {
   }
 
   update(data) {
-    this._userDetails.watchlist = data.watchlist;
-    this._userDetails.alreadyWatched = data.alreadyWatched;
-    this._userDetails.favorite = data.favorite;
+    this._userDetails.watchlist = data.userDetails.watchlist;
+    this._userDetails.alreadyWatched = data.userDetails.alreadyWatched;
+    this._userDetails.favorite = data.userDetails.favorite;
   }
 }

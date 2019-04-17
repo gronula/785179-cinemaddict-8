@@ -2,20 +2,12 @@ import Component from "./component";
 import createElement from './create-element';
 import moment from 'moment';
 
-const COMMENT_AUTHORS = [
-  `Jon Snow`,
-  `Daenerys Targaryen`,
-  `Tyrion Lannister`,
-  `Sansa Stark`,
-];
-
 const EMOJIES = {
   [`sleeping`]: `😴`,
   [`neutral-face`]: `😐`,
   [`grinning`]: `😀`,
 };
-
-const getRandomElement = (array) => array[Math.floor(Math.random() * array.length)];
+moment.relativeTimeThreshold(`ss`, 3);
 
 export default class Popup extends Component {
   constructor({hasControls, id, comments, filmInfo, userDetails}) {
@@ -47,10 +39,10 @@ export default class Popup extends Component {
       favorite: userDetails.favorite,
       personalRating: userDetails.personalRating,
       watchingDate: userDetails.watchingDate,
+      userName: userDetails.userName,
     };
 
-    this._state = {
-    };
+    this._newComments = [];
     this._commentDate = null;
 
     this._element = null;
@@ -58,11 +50,14 @@ export default class Popup extends Component {
     this._onClose = null;
     this._onComment = null;
     this._onRating = null;
+    this._onEscPress = null;
 
     this._closeButtonClickHandler = this._closeButtonClickHandler.bind(this);
     this._emojiListClickHandler = this._emojiListClickHandler.bind(this);
     this._commentCtrlEnterPressHandler = this._commentCtrlEnterPressHandler.bind(this);
+    this._commentUndoButtonClickHandler = this._commentUndoButtonClickHandler.bind(this);
     this._userRatingButtonsClickHandler = this._userRatingButtonsClickHandler.bind(this);
+    this._documentEscPressHandler = this._documentEscPressHandler.bind(this);
   }
 
   _processForm(formData) {
@@ -88,11 +83,12 @@ export default class Popup extends Component {
 
   _closeButtonClickHandler(evt) {
     evt.preventDefault();
+    const target = evt.target;
     const formData = new FormData(this._element.querySelector(`.film-details__inner`));
     const newData = this._processForm(formData);
 
     if (typeof this._onClose === `function`) {
-      this._onClose(newData);
+      this._onClose(newData, target);
     }
 
     this.update(newData);
@@ -100,16 +96,21 @@ export default class Popup extends Component {
 
   _commentCtrlEnterPressHandler(evt) {
     if (evt.key === `Enter` && evt.ctrlKey) {
+      if (evt.target.value.trim() === ``) {
+        return;
+      }
+
       const emoji = this._element.querySelector(`.film-details__add-emoji`);
       const commentTextarea = this._element.querySelector(`.film-details__comment-input`);
       const newComment = {
-        author: getRandomElement(COMMENT_AUTHORS),
+        author: this._userDetails.userName,
         comment: commentTextarea.value.trim(),
         date: moment(),
         emotion: Object.keys(EMOJIES)[Object.values(EMOJIES).indexOf(emoji.previousElementSibling.textContent)],
       };
 
       this._comments.push(newComment);
+      this._newComments.push(newComment);
 
       const newCommentMarkup = `
       <li class="film-details__comment">
@@ -147,6 +148,19 @@ export default class Popup extends Component {
     }
   }
 
+  _commentUndoButtonClickHandler() {
+    const comments = this._element.querySelectorAll(`.film-details__comment`);
+    const commentStatus = this._element.querySelector(`.film-details__watched-status`);
+    const commentUndoButton = this._element.querySelector(`.film-details__watched-reset`);
+
+    comments[this._comments.length - 1].remove();
+    commentStatus.innerHTML = `Comment deleted`;
+    commentStatus.classList.remove(`film-details__watched-status--active`);
+    commentUndoButton.classList.add(`visually-hidden`);
+
+    this._comments.pop();
+  }
+
   _userRatingButtonsClickHandler(evt) {
     if (evt.target.value) {
       const ratingButtons = this._element.querySelectorAll(`.film-details__user-rating-input`);
@@ -168,6 +182,17 @@ export default class Popup extends Component {
 
       this.update(newData);
     }
+  }
+
+  _documentEscPressHandler(evt) {
+    const formData = new FormData(this._element.querySelector(`.film-details__inner`));
+    const newData = this._processForm(formData);
+
+    if (typeof this._onEscPress === `function`) {
+      this._onEscPress(evt, newData);
+    }
+
+    this.update(newData);
   }
 
   _partialUpdate() {
@@ -291,8 +316,8 @@ export default class Popup extends Component {
 
         <section class="film-details__user-rating-wrap">
           <div class="film-details__user-rating-controls">
-            <span class="film-details__watched-status ${this._userDetails.alreadyWatched ? `film-details__watched-status--active` : ``}">${this._userDetails.alreadyWatched ? `Alredy watched` : `Will watch`}</span>
-            <button class="film-details__watched-reset" type="button">undo</button>
+            <span class="film-details__watched-status"></span>
+            <button class="film-details__watched-reset visually-hidden" type="button">undo</button>
           </div>
 
           <div class="film-details__user-score">
@@ -333,28 +358,38 @@ export default class Popup extends Component {
     this._onRating = fn;
   }
 
+  set onEscPress(fn) {
+    this._onEscPress = fn;
+  }
+
   createListeners() {
     const closeButton = this._element.querySelector(`.film-details__close-btn`);
     const emojiList = this._element.querySelector(`.film-details__emoji-list`);
     const comment = this._element.querySelector(`.film-details__comment-input`);
+    const commentUndoButton = this._element.querySelector(`.film-details__watched-reset`);
     const userRating = this._element.querySelector(`.film-details__user-rating-score`);
 
     closeButton.addEventListener(`click`, this._closeButtonClickHandler);
     emojiList.addEventListener(`click`, this._emojiListClickHandler);
     comment.addEventListener(`keydown`, this._commentCtrlEnterPressHandler);
+    commentUndoButton.addEventListener(`click`, this._commentUndoButtonClickHandler);
     userRating.addEventListener(`click`, this._userRatingButtonsClickHandler);
+    document.addEventListener(`keydown`, this._documentEscPressHandler);
   }
 
   removeListeners() {
     const closeButton = this._element.querySelector(`.film-details__close-btn`);
     const emojiList = this._element.querySelector(`.film-details__emoji-list`);
     const comment = this._element.querySelector(`.film-details__comment-input`);
+    const commentUndoButton = this._element.querySelector(`.film-details__watched-reset`);
     const userRating = this._element.querySelector(`.film-details__user-rating-score`);
 
     closeButton.removeEventListener(`click`, this._closeButtonClickHandler);
     emojiList.removeEventListener(`click`, this._emojiListClickHandler);
     comment.removeEventListener(`keydown`, this._commentCtrlEnterPressHandler);
+    commentUndoButton.removeEventListener(`click`, this._commentUndoButtonClickHandler);
     userRating.removeEventListener(`click`, this._userRatingButtonsClickHandler);
+    document.removeEventListener(`keydown`, this._documentEscPressHandler);
   }
 
   update(data) {

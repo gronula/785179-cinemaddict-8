@@ -1,4 +1,4 @@
-import ModelTask from "./model-card";
+import ModelCard from "./model-card";
 
 const Method = {
   GET: `GET`,
@@ -23,25 +23,25 @@ export default class API {
     this._authorization = authorization;
   }
 
-  getTasks() {
+  getCards() {
     document.querySelector(`.films-list  .films-list__container`).textContent = `Loading movies...`;
     return this._load({url: `movies`})
       .then(toJSON)
-      .then(ModelTask.parseTasks);
+      .then(ModelCard.parseCards);
   }
 
-  createTask(task) {
+  createCard(card) {
     return this._load({
       url: `movies`,
       method: Method.POST,
-      body: JSON.stringify(task),
+      body: JSON.stringify(card),
       headers: new Headers({[`Content-Type`]: `application/json`})
     })
       .then(toJSON)
-      .then(ModelTask.parseTask);
+      .then(ModelCard.parseCard);
   }
 
-  updateTask({id, data}) {
+  updateCard({id, data}) {
     return this._load({
       url: `movies/${id}`,
       method: Method.PUT,
@@ -49,10 +49,10 @@ export default class API {
       headers: new Headers({'Content-Type': `application/json`})
     })
       .then(toJSON)
-      .then(ModelTask.parseTask);
+      .then(ModelCard.parseCard);
   }
 
-  deleteTask(id) {
+  deleteCard(id) {
     return this._load({url: `movies/${id}`, method: Method.DELETE});
   }
 
