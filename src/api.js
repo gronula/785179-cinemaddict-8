@@ -17,7 +17,7 @@ const checkStatus = (response) => {
 
 const toJSON = (response) => response.json();
 
-export default class API {
+export default class Api {
   constructor({endPoint, authorization}) {
     this._endPoint = endPoint;
     this._authorization = authorization;
@@ -30,17 +30,6 @@ export default class API {
       .then(ModelCard.parseCards);
   }
 
-  createCard(card) {
-    return this._load({
-      url: `movies`,
-      method: Method.POST,
-      body: JSON.stringify(card),
-      headers: new Headers({[`Content-Type`]: `application/json`})
-    })
-      .then(toJSON)
-      .then(ModelCard.parseCard);
-  }
-
   updateCard({id, data}) {
     return this._load({
       url: `movies/${id}`,
@@ -50,10 +39,6 @@ export default class API {
     })
       .then(toJSON)
       .then(ModelCard.parseCard);
-  }
-
-  deleteCard(id) {
-    return this._load({url: `movies/${id}`, method: Method.DELETE});
   }
 
   _load({url, method = Method.GET, body = null, headers = new Headers()}) {

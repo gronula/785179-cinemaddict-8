@@ -2,8 +2,10 @@ import getFilterData from './filter-data';
 import Filter from './filter';
 import Card from './card';
 import Popup from './popup';
+import Search from './search';
 import getStatisticChart from './statistic';
-import API from './api';
+import Api from './api';
+import moment from 'moment';
 
 const COMMENT_AUTHORS = [
   `Jon Snow`,
@@ -23,10 +25,48 @@ const filmsList = document.querySelector(`.films-list  .films-list__container`);
 const filmsListsExtra = document.querySelectorAll(`.films-list--extra  .films-list__container`);
 const showMoreButton = document.querySelector(`.films-list__show-more`);
 
-const api = new API({endPoint: END_POINT, authorization: AUTHORIZATION});
+const api = new Api({endPoint: END_POINT, authorization: AUTHORIZATION});
 
 const getRandomElement = (array) => array[Math.floor(Math.random() * array.length)];
 const userName = getRandomElement(COMMENT_AUTHORS);
+
+const renderSearchField = () => {
+  const headerProfile = document.querySelector(`.header__profile`);
+
+  const searchComponent = new Search();
+  const searchElement = searchComponent.render();
+
+  searchComponent.onSearch = (evt) => {
+    const openedPopup = document.querySelector(`.film-details`);
+    if (openedPopup) {
+      return;
+    }
+
+    filmsList.innerHTML = ``;
+
+    const value = evt.target.value.toLowerCase();
+    const currentFilter = document.querySelector(`.main-navigation__item--active`);
+    const currentFilterName = currentFilter.href.split(`#`)[1];
+
+    if (value === ``) {
+      for (const filter of filters) {
+        if (filter.name === currentFilterName) {
+          filteredCards = filterCards(allCards, currentFilterName);
+          filteredShownCards = filteredCards.slice().splice(0, filter.filteredShownCardsNumber);
+          renderCards(filteredShownCards, filmsList);
+          showMoreButton.style.display = filteredCards.length > filteredShownCards.length ? `` : `none`;
+          return;
+        }
+      }
+    } else {
+      filteredCards = allCards.filter((it) => it.filmInfo.title.toLowerCase().includes(value));
+      renderCards(filteredCards, filmsList);
+      showMoreButton.style.display = `none`;
+    }
+  };
+
+  headerProfile.parentElement.insertBefore(searchElement, headerProfile);
+};
 
 const getFilters = (cards, filteredShownCardsNumber = CARDS_NUMBER, activeFilterNumber = 0) => {
   const filtersAmount = {
@@ -66,8 +106,25 @@ const filterCards = (cards, filterName) => {
     case `history`: return cards.filter((it) => it.userDetails.alreadyWatched);
     case `favorites`: return cards.filter((it) => it.userDetails.favorite);
 
+    case `all-time`: return cards;
+    case `today`: return cards.filter((it) => moment(it.userDetails.watchingDate).isSame(moment(), `day`));
+    case `week`: return cards.filter((it) => moment(it.userDetails.watchingDate).isSame(moment(), `isoWeek`));
+    case `month`: return cards.filter((it) => moment(it.userDetails.watchingDate).isSame(moment(), `month`));
+    case `year`: return cards.filter((it) => moment(it.userDetails.watchingDate).isSame(moment(), `year`));
+
     default: return cards;
   }
+};
+
+const statisticFilterChangeHandler = (evt) => {
+  if (statisticChart) {
+    statisticChart.destroy();
+  }
+
+  filteredCards = filterCards(allCards, evt.target.value);
+
+  const statisticChartData = getStatisticChart(filteredCards);
+  statisticChart = statisticChartData.draw();
 };
 
 const renderFilterElements = (filters, container) => {
@@ -87,6 +144,11 @@ const renderFilterElements = (filters, container) => {
 
       const filmsContainer = document.querySelector(`.films`);
       const statisticContainer = document.querySelector(`.statistic`);
+      const statisticFilters = document.querySelector(`.statistic__filters`);
+
+      filmsContainer.classList.add(`visually-hidden`);
+      statisticContainer.classList.remove(`visually-hidden`);
+
       const currentFilter = container.querySelector(`.main-navigation__item--active`);
       currentFilter.classList.remove(`main-navigation__item--active`);
       target.classList.add(`main-navigation__item--active`);
@@ -96,13 +158,19 @@ const renderFilterElements = (filters, container) => {
           statisticChart.destroy();
         }
 
-        statisticChart = getStatisticChart(allCards);
+        const statisticChartData = getStatisticChart(allCards);
+        statisticChart = statisticChartData.draw();
 
-        filmsContainer.classList.add(`visually-hidden`);
-        statisticContainer.classList.remove(`visually-hidden`);
+        const statisticRankLabel = document.querySelector(`.statistic__rank-label`);
+        statisticRankLabel.innerHTML = statisticChartData.rank;
+
+        statisticFilters.addEventListener(`change`, statisticFilterChangeHandler);
       } else {
+        statisticFilters.reset();
+        statisticFilters.removeEventListener(`change`, statisticFilterChangeHandler);
+
         filteredCards = filterCards(allCards, name.toLowerCase());
-        const filteredShownCards = filteredCards.slice().splice(0, filter.filteredShownCardsNumber);
+        filteredShownCards = filteredCards.slice().splice(0, filter.filteredShownCardsNumber);
         showMoreButton.style.display = filteredCards.length > filteredShownCards.length ? `` : `none`;
         renderCards(filteredShownCards, filmsList);
         filmsContainer.classList.remove(`visually-hidden`);
@@ -144,11 +212,11 @@ const renderCards = (cards, container, hasControls = true) => {
     const updateFilters = () => {
       const filterItems = Array.from(document.querySelectorAll(`.main-navigation__item`));
       const activeFilter = document.querySelector(`.main-navigation__item--active`);
-      for (let i = 0; i < filterItems.length; i++) {
-        if (filterItems[i] === activeFilter) {
+      filterItems.forEach((it, i) => {
+        if (it === activeFilter) {
           renderFilterElements(getFilters(allCards, filters[i].filteredShownCardsNumber, i), mainNav);
         }
-      }
+      });
     };
 
     const updateComponent = (newObject) => {
@@ -161,8 +229,7 @@ const renderCards = (cards, container, hasControls = true) => {
 
       api.updateCard({id: card.id, data: card.toRAW()})
         .then((newCard) => {
-          cardComponent.update(newCard);
-          popupComponent.update(newCard);
+          popupComponent.update(newCard.userDetails);
           updateFilters();
         });
     };
@@ -172,20 +239,19 @@ const renderCards = (cards, container, hasControls = true) => {
     cardComponent.onMarkAsFavorite = updateComponent;
 
     popupComponent.onEscPress = (evt, newObject) => {
-      if (evt.key === `Escape`) {
-        evt.preventDefault();
-        Object.assign(card.userDetails, newObject);
+      evt.preventDefault();
+      Object.assign(card.userDetails, newObject);
 
-        api.updateCard({id: card.id, data: card.toRAW()})
-          .then((newCard) => {
-            updateFilters();
-            cardComponent.update(newCard);
-            const updatedCardElement = cardComponent.render();
-            container.replaceChild(updatedCardElement, cardElement);
-            cardElement = updatedCardElement;
-            popupComponent.unrender();
-          });
-      }
+      api.updateCard({id: card.id, data: card.toRAW()})
+        .then((newCard) => {
+          updateFilters();
+          cardComponent.update(newCard.userDetails);
+          const updatedCardElement = cardComponent.render();
+          container.replaceChild(updatedCardElement, cardElement);
+          cardElement = updatedCardElement;
+          popupComponent.unrender();
+          popupComponent.isEscPressed = false;
+        });
     };
     popupComponent.onClose = (newObject, closeButton) => {
       closeButton.disabled = true;
@@ -194,11 +260,12 @@ const renderCards = (cards, container, hasControls = true) => {
       api.updateCard({id: card.id, data: card.toRAW()})
         .then((newCard) => {
           updateFilters();
-          cardComponent.update(newCard);
+          cardComponent.update(newCard.userDetails);
           const updatedCardElement = cardComponent.render();
           container.replaceChild(updatedCardElement, cardElement);
           cardElement = updatedCardElement;
           popupComponent.unrender();
+          popupComponent.isEscPressed = false;
           closeButton.disabled = false;
         });
     };
@@ -207,10 +274,18 @@ const renderCards = (cards, container, hasControls = true) => {
 
       const ratingContainer = popupElement.querySelector(`.film-details__user-rating-score`);
       const ratingButtons = popupElement.querySelectorAll(`.film-details__user-rating-input`);
+      const ratingButtonLabels = popupElement.querySelectorAll(`.film-details__user-rating-label`);
+
+      ratingButtons.forEach((it) => {
+        it.disabled = true;
+      });
+      ratingButtonLabels.forEach((it) => {
+        it.style.backgroundColor = ``;
+      });
 
       api.updateCard({id: card.id, data: card.toRAW()})
         .then((newCard) => {
-          popupComponent.update(newCard);
+          cardComponent.update(newCard.userDetails);
           ratingButtons.forEach((it) => {
             it.disabled = false;
           });
@@ -231,9 +306,13 @@ const renderCards = (cards, container, hasControls = true) => {
       const emoji = popupElement.querySelector(`.film-details__add-emoji`);
       const commentTextarea = popupElement.querySelector(`.film-details__comment-input`);
 
+      commentTextarea.style.borderColor = ``;
+      commentTextarea.disabled = true;
+      emoji.disabled = true;
+
       api.updateCard({id: card.id, data: card.toRAW()})
         .then((newCard) => {
-          popupComponent.update(newCard);
+          cardComponent.update(newCard.userDetails);
           const commentsList = popupElement.querySelector(`.film-details__comments-list`);
           commentsList.appendChild(newComment);
           commentTextarea.value = ``;
@@ -266,6 +345,7 @@ let allCards;
 let mainCards;
 let filters;
 let filteredCards;
+let filteredShownCards;
 let statisticChart;
 
 api.getCards()
@@ -280,6 +360,7 @@ api.getCards()
     renderCards(mostCommentedCards, filmsListsExtra[1], false);
 
     renderFilterElements(getFilters(allCards), mainNav);
+    renderSearchField();
   });
 
 showMoreButton.addEventListener(`click`, () => {
@@ -292,13 +373,12 @@ showMoreButton.addEventListener(`click`, () => {
     if (filter.name === currentFilterName) {
       filter.filteredShownCardsNumber += CARDS_NUMBER;
 
-      const filteredShownCards = filteredCards.slice().splice(0, filter.filteredShownCardsNumber);
+      filteredShownCards = filteredCards.slice().splice(0, filter.filteredShownCardsNumber);
 
       renderCards(filteredShownCards, filmsList);
       showMoreButton.style.display = filteredCards.length > filteredShownCards.length ? `` : `none`;
 
-      break;
+      return;
     }
   }
-
 });
