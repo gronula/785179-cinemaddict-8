@@ -1,3 +1,5 @@
+import moment from 'moment';
+
 export default class ModelCard {
   constructor(data) {
     this.id = data.id;
@@ -14,8 +16,8 @@ export default class ModelCard {
       genre: data[`film_info`][`genre`] || [],
       poster: data[`film_info`][`poster`] || ``,
       release: {
-        date: new Date(data[`film_info`].release[`date`]),
-        releaseCountry: data[`film_info`].release[`release_country`] || ``,
+        date: new Date(data[`film_info`][`release`][`date`]),
+        releaseCountry: data[`film_info`][`release`][`release_country`] || ``,
       },
       runtime: data[`film_info`][`runtime`] || ``,
       title: data[`film_info`][`title`] || ``,
@@ -26,7 +28,7 @@ export default class ModelCard {
       alreadyWatched: Boolean(data[`user_details`][`already_watched`]),
       favorite: Boolean(data[`user_details`][`favorite`]),
       personalRating: data[`user_details`][`personal_rating`] || ``,
-      watchingDate: new Date(data[`user_details`][`watching_date`]),
+      watchingDate: data[`user_details`][`watching_date`] ? new Date(data[`user_details`][`watching_date`]) : null,
       watchlist: Boolean(data[`user_details`][`watchlist`]),
     };
   }
@@ -34,7 +36,10 @@ export default class ModelCard {
   toRAW() {
     return {
       [`id`]: this.id,
-      [`comments`]: this.comments,
+      [`comments`]: this.comments.map((it) => {
+        it.date = Number(moment(it.date).format(`x`));
+        return it;
+      }),
       [`film_info`]: {
         [`actors`]: this.filmInfo.actors,
         [`age_rating`]: this.filmInfo.ageRating,
@@ -43,7 +48,10 @@ export default class ModelCard {
         [`director`]: this.filmInfo.director,
         [`genre`]: this.filmInfo.genre,
         [`poster`]: this.filmInfo.poster,
-        [`release`]: this.filmInfo.release,
+        [`release`]: {
+          [`date`]: Number(moment(this.filmInfo.release.date).format(`x`)),
+          [`release_country`]: this.filmInfo.release.releaseCountry,
+        },
         [`runtime`]: this.filmInfo.runtime,
         [`title`]: this.filmInfo.title,
         [`total_rating`]: this.filmInfo.totalRating,
@@ -53,7 +61,7 @@ export default class ModelCard {
         [`already_watched`]: this.userDetails.alreadyWatched,
         [`favorite`]: this.userDetails.favorite,
         [`personal_rating`]: this.userDetails.personalRating,
-        [`watching_date`]: this.userDetails.watchingDate,
+        [`watching_date`]: this.userDetails.watchingDate ? Number(moment(this.userDetails.watchingDate).format(`x`)) : null,
         [`watchlist`]: this.userDetails.watchlist,
       }
     };

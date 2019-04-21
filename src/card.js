@@ -56,7 +56,11 @@ export default class Card extends Component {
         <span class="film-card__genre">${this._filmInfo.genre.join(`, `)}</span>
       </p>
       <img src="${this._filmInfo.poster}" alt="" class="film-card__poster">
-      ${this._hasControls ? `<p class="film-card__description">${this._filmInfo.description}</p>` : ``}
+      ${this._hasControls ? `<p class="film-card__description">${[...this._filmInfo.description].map((it, i) => {
+    it = i > 136 ? `.` : it;
+    return it;
+  }).splice(0, 140).join(``)}
+      </p>` : ``}
       <button class="film-card__comments">${this._comments.length} comments</button>
 
       ${this._hasControls ? `
@@ -83,6 +87,7 @@ export default class Card extends Component {
 
   _markAsWatchedButtonClickHandler() {
     this._userDetails.alreadyWatched = !this._userDetails.alreadyWatched;
+    this._userDetails.watchingDate = this._userDetails.alreadyWatched ? new Date() : null;
 
     if (typeof this._onMarkAsWatched === `function`) {
       this._onMarkAsWatched(this._userDetails);
@@ -129,8 +134,8 @@ export default class Card extends Component {
   }
 
   update(data) {
-    this._userDetails.watchlist = data.userDetails.watchlist;
-    this._userDetails.alreadyWatched = data.userDetails.alreadyWatched;
-    this._userDetails.favorite = data.userDetails.favorite;
+    this._userDetails.watchlist = data.watchlist;
+    this._userDetails.alreadyWatched = data.alreadyWatched;
+    this._userDetails.favorite = data.favorite;
   }
 }

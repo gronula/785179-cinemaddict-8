@@ -58,13 +58,13 @@ export default (cards) => {
   totalDuration.innerHTML = `${moment.duration(chartData.totalDuration).get(`d`) * 24 + moment.duration(chartData.totalDuration).get(`h`)} <span class="statistic__item-description">h</span> ${moment.duration(chartData.totalDuration).get(`m`)} <span class="statistic__item-description">m</span>`;
   totalGenre.innerHTML = chartData.genres.length ? `${chartData.genres[0].name}` : `-`;
 
-  const statisticRankLabel = document.querySelector(`.statistic__rank-label`);
+  let rank;
   if (chartData.totalWatched < 10) {
-    statisticRankLabel.innerHTML = RANKS[0];
+    rank = RANKS[0];
   } else if (chartData.totalWatched >= 10 && chartData.totalWatched < 20) {
-    statisticRankLabel.innerHTML = RANKS[1];
+    rank = RANKS[1];
   } else {
-    statisticRankLabel.innerHTML = RANKS[2];
+    rank = RANKS[2];
   }
 
   const statisticCtx = document.querySelector(`.statistic__chart`);
@@ -75,60 +75,65 @@ export default (cards) => {
     return false;
   }
 
-  return new Chart(statisticCtx, {
-    plugins: [ChartDataLabels],
-    type: `horizontalBar`,
-    data: {
-      labels: chartData.genres.map((it) => it.name),
-      datasets: [{
-        data: chartData.genres.map((it) => it.amount),
-        backgroundColor: `#ffe800`,
-        hoverBackgroundColor: `#ffe800`,
-        anchor: `start`
-      }]
-    },
-    options: {
-      plugins: {
-        datalabels: {
-          font: {
-            size: 20
-          },
-          color: `#ffffff`,
-          anchor: `start`,
-          align: `start`,
-          offset: 40,
+  const statisticChart = {
+    draw: () => new Chart(statisticCtx, {
+      plugins: [ChartDataLabels],
+      type: `horizontalBar`,
+      data: {
+        labels: chartData.genres.map((it) => it.name),
+        datasets: [{
+          data: chartData.genres.map((it) => it.amount),
+          backgroundColor: `#ffe800`,
+          hoverBackgroundColor: `#ffe800`,
+          anchor: `start`
+        }]
+      },
+      options: {
+        plugins: {
+          datalabels: {
+            font: {
+              size: 20
+            },
+            color: `#ffffff`,
+            anchor: `start`,
+            align: `start`,
+            offset: 40,
+          }
+        },
+        scales: {
+          yAxes: [{
+            ticks: {
+              fontColor: `#ffffff`,
+              padding: 100,
+              fontSize: 20
+            },
+            gridLines: {
+              display: false,
+              drawBorder: false
+            },
+            barThickness: 24
+          }],
+          xAxes: [{
+            ticks: {
+              display: false,
+              beginAtZero: true
+            },
+            gridLines: {
+              display: false,
+              drawBorder: false
+            },
+          }],
+        },
+        legend: {
+          display: false
+        },
+        tooltips: {
+          enabled: false
         }
-      },
-      scales: {
-        yAxes: [{
-          ticks: {
-            fontColor: `#ffffff`,
-            padding: 100,
-            fontSize: 20
-          },
-          gridLines: {
-            display: false,
-            drawBorder: false
-          },
-          barThickness: 24
-        }],
-        xAxes: [{
-          ticks: {
-            display: false,
-            beginAtZero: true
-          },
-          gridLines: {
-            display: false,
-            drawBorder: false
-          },
-        }],
-      },
-      legend: {
-        display: false
-      },
-      tooltips: {
-        enabled: false
       }
-    }
-  });
+    }),
+    rank,
+  };
+
+  return statisticChart;
 };
