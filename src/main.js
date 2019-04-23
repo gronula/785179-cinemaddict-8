@@ -33,10 +33,10 @@ const store = new Store({key: CARDS_STORE_KEY, storage: localStorage});
 const provider = new Provider({api, store});
 
 window.addEventListener(`offline`, () => {
-  document.title = `[OFFLINE]${document.title}`;
+  document.title = `${document.title}[OFFLINE]`;
 });
 window.addEventListener(`online`, () => {
-  document.title = document.title.split(`[OFFLINE]`)[1];
+  document.title = document.title.split(`[OFFLINE]`)[0];
   provider.syncCards();
 });
 
