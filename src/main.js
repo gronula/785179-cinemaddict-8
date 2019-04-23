@@ -5,6 +5,8 @@ import Popup from './popup';
 import Search from './search';
 import getStatisticChart from './statistic';
 import Api from './api';
+import Store from './store';
+import Provider from './provider';
 import moment from 'moment';
 
 const COMMENT_AUTHORS = [
@@ -16,6 +18,7 @@ const COMMENT_AUTHORS = [
 
 const AUTHORIZATION = `Basic dXNlckBwYXNzd29yZAo=${Math.random()}`;
 const END_POINT = `https://es8-demo-srv.appspot.com/moowle/`;
+const CARDS_STORE_KEY = `cards-store-key`;
 const CARDS_NUMBER = 5;
 const CARDS_EXTRA_NUMBER = 2;
 const FILTERS_NUMBER = 5;
@@ -26,6 +29,16 @@ const filmsListsExtra = document.querySelectorAll(`.films-list--extra  .films-li
 const showMoreButton = document.querySelector(`.films-list__show-more`);
 
 const api = new Api({endPoint: END_POINT, authorization: AUTHORIZATION});
+const store = new Store({key: CARDS_STORE_KEY, storage: localStorage});
+const provider = new Provider({api, store});
+
+window.addEventListener(`offline`, () => {
+  document.title = `[OFFLINE]${document.title}`;
+});
+window.addEventListener(`online`, () => {
+  document.title = document.title.split(`[OFFLINE]`)[1];
+  provider.syncCards();
+});
 
 const getRandomElement = (array) => array[Math.floor(Math.random() * array.length)];
 const userName = getRandomElement(COMMENT_AUTHORS);
@@ -227,7 +240,7 @@ const renderCards = (cards, container, hasControls = true) => {
 
       Object.assign(card.userDetails, newObject);
 
-      api.updateCard({id: card.id, data: card.toRAW()})
+      provider.updateCard({id: card.id, data: card.toRAW()})
         .then((newCard) => {
           popupComponent.update(newCard.userDetails);
           updateFilters();
@@ -242,7 +255,7 @@ const renderCards = (cards, container, hasControls = true) => {
       evt.preventDefault();
       Object.assign(card.userDetails, newObject);
 
-      api.updateCard({id: card.id, data: card.toRAW()})
+      provider.updateCard({id: card.id, data: card.toRAW()})
         .then((newCard) => {
           updateFilters();
           cardComponent.update(newCard.userDetails);
@@ -257,7 +270,7 @@ const renderCards = (cards, container, hasControls = true) => {
       closeButton.disabled = true;
       Object.assign(card.userDetails, newObject);
 
-      api.updateCard({id: card.id, data: card.toRAW()})
+      provider.updateCard({id: card.id, data: card.toRAW()})
         .then((newCard) => {
           updateFilters();
           cardComponent.update(newCard.userDetails);
@@ -283,7 +296,7 @@ const renderCards = (cards, container, hasControls = true) => {
         it.style.backgroundColor = ``;
       });
 
-      api.updateCard({id: card.id, data: card.toRAW()})
+      provider.updateCard({id: card.id, data: card.toRAW()})
         .then((newCard) => {
           cardComponent.update(newCard.userDetails);
           ratingButtons.forEach((it) => {
@@ -310,7 +323,7 @@ const renderCards = (cards, container, hasControls = true) => {
       commentTextarea.disabled = true;
       emoji.disabled = true;
 
-      api.updateCard({id: card.id, data: card.toRAW()})
+      provider.updateCard({id: card.id, data: card.toRAW()})
         .then((newCard) => {
           cardComponent.update(newCard.userDetails);
           const commentsList = popupElement.querySelector(`.film-details__comments-list`);
@@ -348,7 +361,7 @@ let filteredCards;
 let filteredShownCards;
 let statisticChart;
 
-api.getCards()
+provider.getCards()
   .then((cards) => {
     allCards = cards;
     mainCards = allCards.slice().splice(0, CARDS_NUMBER);

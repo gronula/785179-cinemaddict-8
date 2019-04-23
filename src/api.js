@@ -4,7 +4,6 @@ const Method = {
   GET: `GET`,
   POST: `POST`,
   PUT: `PUT`,
-  DELETE: `DELETE`
 };
 
 const checkStatus = (response) => {
@@ -39,6 +38,16 @@ export default class Api {
     })
       .then(toJSON)
       .then(ModelCard.parseCard);
+  }
+
+  syncCards({cards}) {
+    return this._load({
+      url: `movies/sync`,
+      method: `POST`,
+      body: JSON.stringify(cards),
+      headers: new Headers({'Content-Type': `application/json`})
+    })
+      .then(toJSON);
   }
 
   _load({url, method = Method.GET, body = null, headers = new Headers()}) {
